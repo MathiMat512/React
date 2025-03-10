@@ -1,0 +1,13 @@
+.App {
+  display: flex;
+}
+
+.content {
+  margin-left: 0; /* Inicialmente sin margen */
+  transition: margin-left 0.3s;
+  padding: 20px;
+}
+
+.sidebar.open + .content {
+  margin-left: 250px; /* Margen cuando el sidebar está abierto */
+}
