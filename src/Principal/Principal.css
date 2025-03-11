@@ -1,0 +1,149 @@
+.hero-section {
+    background-image: url(../images/fondo.jpg);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: white;
+    min-height: 400px;
+ }
+ 
+ .quick-nav {
+     text-align: center;
+     margin: 2rem 0;
+ }
+ 
+ .quick-nav-buttons {
+     display: flex;
+     justify-content: center;
+     gap: 1rem;
+     margin-top: 1rem;
+ }
+ 
+ .nav-button {
+     background: rgba(0, 0, 0, 0.2);
+     color: white;
+     padding: 0.8rem 1.5rem;
+     border-radius: 5px;
+     border: none;
+     cursor: pointer;
+     transition: background 0.3s;
+ }
+ 
+ .nav-button:hover {
+     background: rgba(0, 0, 0, 0.3);
+ }
+ 
+ .content-area {
+    padding: 2rem;
+    background: #f5f5f5;
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;  /* Permite que los elementos se ajusten cuando no hay suficiente espacio */
+ }
+ 
+ .section {
+    flex: 1; /* Ocupa el espacio disponible */
+    min-width: 250px; /* Asegura que las secciones no se hagan demasiado pequeñas */
+ }
+ 
+ @media (max-width: 767px) {
+    h1 {
+        font-size: 30px;  /* Reducir tamaño en móviles */
+    }
+    
+    .nav-button1 {
+        width: 100%;  /* Asegura que el botón ocupe todo el ancho en pantallas pequeñas */
+    }
+
+    .section h3 {
+        font-size: 20px;  /* Reducir tamaño del título */
+    }
+
+    .section ul li {
+        font-size: 16px;
+    }
+
+    .content-area {
+        flex-direction: column;  /* Cambia la dirección de los elementos a una columna en pantallas pequeñas */
+        padding: 1rem; /* Reduce el padding en pantallas pequeñas */
+    }
+
+    .hero-section{
+        flex-direction: flex;
+    }
+ 
+    .section {
+        min-width: 100%; /* Las secciones ocupan todo el ancho disponible */
+    }
+ 
+    .quick-nav {
+        margin-bottom: 20px; /* Añade espacio entre la navegación y el contenido en pantallas pequeñas */
+    }
+
+    .quick-nav-buttons {
+        flex-direction: column; /* Cambia la dirección de los botones a una columna en pantallas pequeñas */
+    }
+ }
+ 
+ .section {
+     flex: 1;
+     margin: 0 1rem;
+ }
+ 
+ .section h3 {
+     color: #333;
+     margin-bottom: 1rem;
+ }
+ 
+ .section ul {
+     list-style: none;
+     padding: 0;
+ }
+ 
+ .section li {
+     margin-bottom: 0.8rem;
+     color: #666;
+ }
+ 
+ .app-grid {
+     display: grid;
+     grid-template-columns: repeat(3, 1fr);
+     gap: 1rem;
+ }
+ 
+ .app-item {
+     text-align: center;
+     padding: 1rem;
+     background: white;
+     border-radius: 8px;
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ }
+ 
+ .app-item img {
+     width: 48px;
+     height: 48px;
+     margin-bottom: 0.5rem;
+ }
+ 
+ .app-item p {
+     margin: 0;
+     color: #666;
+ }
+
+ .nav-button1 {
+     background: rgba(169, 255, 255, 0.658);
+     color: rgb(102, 102, 102);
+     padding: 0.8rem 1.5rem;
+     border-radius: 50px;
+     border: none;
+     transition: background-color 400ms;
+     font-family: 'Poppins';
+ }
+ 
+ .nav-button1:hover {
+     background-color: #70cde4d2;
+     color: #fff;
+ }

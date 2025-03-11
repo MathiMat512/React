@@ -3,6 +3,8 @@ import logo from './logo.svg';
 import SideNav from './SideNav/SideNav';
 import Clientes from './Clientes/Clientes';
 import Principal from './Principal/Principal';
+import PorCobrar from './PorCobrar/PorCobrar';
+import PorPagar from './PorPagar/PorPagar';
 import './App.css';
 
 function App() {
@@ -10,10 +12,12 @@ function App() {
     <Router>
       <div className="App">
         <SideNav />
-        <div className="content">
+        <div className='main-content'>
           <Routes>
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/principal" element={<Principal />} />
+            <Route path="/porcobrar" element={<PorCobrar />} />
+            <Route path="/porpagar" element={<PorPagar />} />
           </Routes>
         </div>
       </div>

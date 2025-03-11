@@ -1,0 +1,195 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    overflow: hidden; /* Nueva línea */
+    height: 100vh; /* Ocupa toda la altura */
+}
+
+.container {
+    max-width: 2000px;
+    padding: 50px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-grow: 1;
+    overflow-y: auto; /* Scroll vertical si el contenido es largo */
+    margin: 0; /* Elimina margen automático */
+    height: calc(100vh - 40px); /* Altura ajustada */
+}     
+
+.container-index {
+    max-width: 2000px;
+    padding: 0px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-grow: 1;
+    overflow-y: auto; /* Scroll vertical si el contenido es largo */
+    margin: 0; /* Elimina margen automático */
+    height: calc(100vh - 40px); /* Altura ajustada */
+}  
+
+@media (max-width: 767px) {
+    h1 {
+        font-size: 30px;  /* Reducir tamaño en móviles */
+    }
+    
+    .nav-button1 {
+        width: 100%;  /* Asegura que el botón ocupe todo el ancho en pantallas pequeñas */
+    }
+
+    .section h3 {
+        font-size: 20px;  /* Reducir tamaño del título */
+    }
+
+    .section ul li {
+        font-size: 16px;
+    }
+}
+
+.quick-nav-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.app-item img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+}
+
+h1 {
+    color: #007bff;
+}
+
+h2 {
+    color: #333;
+}
+
+h3 {
+    font-size: 24px;
+}
+
+/* Estilos para los inputs */
+.input-group .form-control {
+    border-radius: 5px 0 0 5px;
+    border-right: none;
+}
+
+.input-group .form-control:last-child {
+    border-radius: 0 5px 5px 0;
+    border-left: none;
+}
+
+/* Resultados */
+#resultados {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #555;
+    margin: 0;
+}
+
+/* Separador */
+hr {
+    border-top: 2px solid #ddd;
+}
+
+/* Estilos actualizados para la tabla */
+.table-responsive {
+    max-height: calc(100vh - 300px); /* Ajusta según el espacio disponible */
+    overflow-y: auto;
+    width: 100%;
+}
+
+.table {
+    width: 100% !important;
+    margin-bottom: 0;
+    border-spacing: 0; /* Asegura que no haya espacio entre las celdas */
+}
+
+.table thead {
+    position: sticky;
+    top: -18px; /* Mover el encabezado ligeramente hacia arriba */
+    z-index: 1000; /* Asegura que el encabezado esté sobre el contenido */
+    background-color: white; /* Fondo sólido */
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* Añadir sombra para mejorar la visibilidad */
+    backface-visibility: hidden; /* Evitar problemas de renderizado */
+}
+
+.table thead th {
+    position: sticky;
+    top: -1px; /* Mover el encabezado ligeramente hacia arriba */
+    background-color: white; /* Fondo sólido */
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px 8px; /* Añadir más padding para dar espacio */
+    z-index: 1000; /* Asegura que el encabezado esté sobre el contenido */
+    backface-visibility: hidden; /* Evitar problemas de renderizado */
+}
+
+/* Estilos para ordenamiento de tabla */
+.sortable {
+    cursor: pointer;
+}
+
+.sortable:hover {
+    background-color: #e9ecef;
+}
+
+.sortable.asc::after {
+    content: ' ↑';
+}
+
+.sortable.desc::after {
+    content: ' ↓';
+}
+
+.table tbody {
+    position: relative;
+    z-index: 1; /* Asegura que el contenido esté debajo del encabezado */
+}
+
+.table th, 
+.table td {
+    padding: 8px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 20px;
+}
+
+.body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    overflow: hidden;
+    height: 100vh;
+}
+
+.nav-button1 {
+    background: rgba(169, 255, 255, 0.658);
+    color: rgb(102, 102, 102);
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    border: none;
+    transition: background-color 400ms;
+    font-family: 'Poppins';
+}
+
+.nav-button1:hover {
+    background-color: #70cde4d2;
+    color: #fff;
+}
