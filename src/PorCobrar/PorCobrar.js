@@ -186,7 +186,7 @@ function PorCobrar() {
                                 <th>Doc</th>
                                 <th>Serie</th>
                                 <th>Número</th>
-                                <th onClick={() => sortTableByColumn('DOC_FCH')}>
+                                <th className='sortable' onClick={() => sortTableByColumn('DOC_FCH')}>
                                     Fecha {sortConfig.key === 'DOC_FCH' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th>Moneda</th>
@@ -194,8 +194,8 @@ function PorCobrar() {
                                 <th>Abono en S/.</th>
                                 <th>Cargo en $</th>
                                 <th>Abono en $</th>
-                                <th onClick={() => sortTableByColumn('STAT_CANC')}>
-                                    Estado {sortConfig.key === 'STAT_CANC' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                <th className='sortable' onClick={() => sortTableByColumn('STAT_CANC')}>
+                                    Estado {sortConfig.key === 'STAT_CANC' && (sortConfig.direction === 'asc' ? '↓' : '↑')}
                                 </th>
                             </tr>
                         </thead>

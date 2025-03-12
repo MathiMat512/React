@@ -7,6 +7,7 @@ function PorPagar(){
     const [pendiente, setPendiente] = useState(null);
     const [cantidadResultados, setCantidadResultados] = useState('');
     const [error, setError] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
     const formatDateWithSlashes = (dateInt) => {
         if (!dateInt) {
@@ -24,14 +25,38 @@ function PorPagar(){
         }
     };
 
-    const sortTableByColumn = (column, asc = true) => {
-        const dirModifier = asc ? 1 : -1;
-        const sortedRows = [...resultados].sort((a, b) => {
-            const aColText = a[column];
-            const bColText = b[column];
-            return aColText > bColText ? (1 * dirModifier) : (-1 * dirModifier);
+    const sortTableByColumn = (columnKey) => {
+        let direction = 'asc';
+        if (sortConfig.key === columnKey && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key: columnKey, direction });
+
+        const sortedResults = [...resultados].sort((a, b) => {
+            const aValue = a[columnKey];
+            const bValue = b[columnKey];
+
+            if (columnKey === 'STAT_CANC') {
+                const aStatus = aValue === 'C' ? 1 : 0; // CANCELADO = 1, PENDIENTE = 0
+                const bStatus = bValue === 'C' ? 1 : 0; // CANCELADO = 1, PENDIENTE = 0
+
+                if (direction === 'asc') {
+                    return aStatus - bStatus; // PENDIENTE primero
+                } else {
+                    return bStatus - aStatus; // CANCELADO primero
+                }
+            }
+
+            if (aValue < bValue) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return aValue > bValue ? 1 : -1;
         });
-        setResultados(sortedRows);
+
+        setResultados(sortedResults);
     };
 
     const buscarpendiente = async()=>{
@@ -161,13 +186,17 @@ function PorPagar(){
                                 <th>Doc</th>
                                 <th>Serie</th>
                                 <th>Número</th>
-                                <th onClick={() => sortTableByColumn('DOC_FCH')}>Fecha</th>
+                                <th className='sortable' onClick={() => sortTableByColumn('DOC_FCH')}>
+                                    Fecha {sortConfig.key === 'DOC_FCH' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                </th>
                                 <th>Moneda</th>
                                 <th>Cargo en S/.</th>
                                 <th>Abono en S/.</th>
                                 <th>Cargo en $</th>
                                 <th>Abono en $</th>
-                                <th onClick={() => sortTableByColumn('STAT_CANC')}>Estado</th>
+                                <th className='sortable' onClick={() => sortTableByColumn('STAT_CANC')}>
+                                    Estado {sortConfig.key === 'STAT_CANC' && (sortConfig.direction === 'asc' ? '↓' : '↑')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>

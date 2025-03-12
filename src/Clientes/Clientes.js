@@ -29,16 +29,7 @@ function Clientes() {
         }
 
         const queryString = queryParams.join('&');
-        const apiUrl = `http://localhost:3001/api/buscar?${queryString}`;
-        const abrirModal = (cliente) => {
-            setClienteSeleccionado(cliente);
-            setMostrarModal(true);
-        };
-        
-        const cerrarModal = () => {
-            setClienteSeleccionado(null);
-            setMostrarModal(false);
-        };
+        const apiUrl = `http://192.168.1.50:3000/api/buscar?${queryString}`;
         
         try {
             const response = await fetch(apiUrl);
