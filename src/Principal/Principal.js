@@ -10,13 +10,13 @@ function Principal() {
         <div className="quick-nav">
             <h3 style={{ fontFamily: 'Poppins' }}>¿Qué deseas buscar?</h3>
             <div className="quick-nav-buttons">
-                <button className="nav-button1" onClick={() => (window.location.href = 'clientes.html')}>
+                <button className="nav-button1" onClick={() => (window.location.href = 'clientes')}>
                     <i className="fa-solid fa-search"></i> Búsqueda de Clientes
                 </button>
-                <button className="nav-button1" onClick={() => (window.location.href = 'saldos.html')}>
+                <button className="nav-button1" onClick={() => (window.location.href = 'porcobrar')}>
                     <i className="fa-solid fa-users"></i> Consultar deudas de clientes
                 </button>
-                <button className="nav-button1" onClick={() => (window.location.href = 'pendientes.html')}>
+                <button className="nav-button1" onClick={() => (window.location.href = 'porpagar')}>
                     <i className="fa-solid fa-circle-question"></i> Consultar deudas por pagar
                 </button>
             </div>

@@ -17,11 +17,6 @@ function Clientes() {
             return;
         }
 
-        if ([NRO_DI, DSC, COA, PAIS].some(val => val.trim() === '')) {
-            alert("Por favor, ingrese valores válidos para la búsqueda.");
-            return;
-        }
-
         let queryParams = [];
         if (NRO_DI) queryParams.push(`NRO_DI=${NRO_DI}`);
         if (DSC) queryParams.push(`DSC=${DSC}`);
