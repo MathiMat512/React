@@ -1,4 +1,5 @@
 import './Principal.css';
+import '../SideNav/SideNav'
 
 function Principal() {
     return (
