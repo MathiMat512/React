@@ -37,7 +37,7 @@ function SideNav() {
       </div>
 
       <div className="logout">
-        <a href="#"><i className="fas fa-sign-out-alt"></i><span className="menu-text">Cerrar Sesión</span></a>
+        <a href="#"><Link to="/login"><i className="fas fa-sign-out-alt"></i><span className="menu-text">Cerrar Sesión</span></Link></a>
       </div>
     </div>
   );

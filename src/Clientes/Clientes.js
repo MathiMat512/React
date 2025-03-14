@@ -30,15 +30,6 @@ function Clientes() {
 
         const queryString = queryParams.join('&');
         const apiUrl = `http://localhost:3001/api/buscar?${queryString}`;
-        const abrirModal = (cliente) => {
-            setClienteSeleccionado(cliente);
-            setMostrarModal(true);
-        };
-        
-        const cerrarModal = () => {
-            setClienteSeleccionado(null);
-            setMostrarModal(false);
-        };
         
         try {
             const response = await fetch(apiUrl);
