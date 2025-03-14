@@ -1,5 +1,5 @@
 import './Principal.css';
-import '../SideNav/SideNav'
+import '../SideNav/SideNav';
 
 function Principal() {
     return (

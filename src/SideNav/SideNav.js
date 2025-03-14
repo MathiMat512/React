@@ -1,20 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import logo from '../images/logo.png';
 import {Link} from 'react-router-dom';
 import './SideNav.css';
 
 function SideNav() {
   const [collapsed, setCollapsed] = useState(true);
+  const menuIconRef = useRef(null);
+  const sideNavRef = useRef(null);
+  const mediaQuery = window.matchMedia("(max-width: 768px)");
 
   const toggleMenu = () => {
     setCollapsed(!collapsed);
   };
 
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      if (
+        sideNavRef.current &&
+        !sideNavRef.current.contains(event.target) &&
+        !menuIconRef.current.contains(event.target)
+      ) {
+        setCollapsed(true);
+      }
+    };
+
+  // Escucha los cambios en la media query
+  const handleMediaChange = (event) => {
+    if (event.matches) {
+      document.addEventListener("click", handleDocumentClick);
+    }
+  };
+
+  mediaQuery.addEventListener("change", handleMediaChange);
+
+  if (mediaQuery.matches) {
+    document.addEventListener("click", handleDocumentClick);
+  }
+
+  return () => {
+    document.removeEventListener("click", handleDocumentClick);
+    mediaQuery.removeEventListener("change", handleMediaChange);
+  }; 
+}, [mediaQuery]);
+
   return (
-    <div className={`side-nav ${collapsed ? 'collapsed' : ''}`}>
+    <>
+    {
+      !collapsed && mediaQuery.matches&&(
+        <div className="overlay" onClick={toggleMenu}></div>
+      )}
+    <div className={`side-nav ${!collapsed ? 'collapsed' : ''}`} ref={sideNavRef}>
       <div className="padding">
         <div className="nav-header">
-          <div className="nav-item" onClick={toggleMenu}>
+          <div className="nav-item" onClick={toggleMenu} ref={menuIconRef}>
             <a href='#'>
               <i className="fas fa-bars menu-icon" style={{ fontSize: '17px', cursor: 'pointer' }}></i>
               <span class="menu-text"></span>
@@ -40,6 +78,7 @@ function SideNav() {
         <a href="#"><Link to="/login"><i className="fas fa-sign-out-alt"></i><span className="menu-text">Cerrar Sesión</span></Link></a>
       </div>
     </div>
+    </>
   );
 }
 export default SideNav;

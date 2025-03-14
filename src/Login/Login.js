@@ -48,7 +48,7 @@ function Login() {
   
           // Redireccionar luego de 1 segundo
           setTimeout(() => {
-            window.location.href = '/'; // Redirige a la página principal (puedes cambiarla)
+            window.location.href = '/principal'; // Redirige a la página principal (puedes cambiarla)
           }, 1000);
         } else {
           mostrarMensaje(data.mensaje || 'Error de autenticación', 'error');

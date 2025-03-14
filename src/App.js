@@ -29,7 +29,7 @@ function App() {
           path="/"
           element={
             <PrivateLayout>
-              <Navigate to="/principal" replace />
+              <Navigate to="/login" replace />
             </PrivateLayout>
           }
         />
