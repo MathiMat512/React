@@ -17,33 +17,24 @@ function Clientes() {
             return;
         }
 
-        let queryParams = [];
-        if (NRO_DI) queryParams.push(`NRO_DI=${NRO_DI}`);
-        if (DSC) queryParams.push(`DSC=${DSC}`);
-        if (COA) queryParams.push(`COA=${COA}`);
-        if (PAIS) queryParams.push(`PAIS=${PAIS}`);
+        const params = [];
+        if (NRO_DI) params.NRO_DI = NRO_DI;
+        if (DSC) params.DSC = DSC;
+        if (COA) params.COA = COA;
+        if (PAIS) params.PAIS = PAIS;
 
-        if (queryParams.length === 0) {
+        if (Object.keys(params).length === 0) {
             alert("Por favor, ingresa al menos un parámetro para la búsqueda.");
             return;
         }
-
-        const queryString = queryParams.join('&');
-        const apiUrl = `http://localhost:3001/api/buscar?${queryString}`;
         
         try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-
-            if (response.ok) {
-                const filteredResults = data.resultados.filter(item => item.EMPRESA === 1);
-                setResultados(filteredResults);
-                setCantidadResultados(<strong>Se encontró {filteredResults.length} resultados con los parámetros dados</strong>);
-            } else {
-                setResultados([]);
-                setCantidadResultados(data.message || 'No se encontraron resultados');
-            }
-        } catch (error) {
+            const data = await window.API.buscar(params);
+      
+            const filteredResults = data.resultados.filter(item => item.EMPRESA === 1);
+            setResultados(filteredResults);
+            setCantidadResultados(`Se encontró ${filteredResults.length} resultados con los parámetros dados`);
+          } catch (error) {
             console.error('Error de búsqueda:', error);
             alert('Hubo un error en la búsqueda, por favor inténtalo nuevamente.');
         }

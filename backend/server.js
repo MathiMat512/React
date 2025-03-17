@@ -5,11 +5,18 @@ const Ctacte = require('./models/ctacte.model'); // Importa el modelo
 const Ctapagar = require('./models/ctapagar.model'); // Importa el modelo
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const path = require('path');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://192.168.1.63:3001',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../build')));
 
 // Conexión a MongoDB
 mongoose.connect('mongodb://localhost:27017/Prueba1', {
@@ -252,11 +259,15 @@ app.get('/api/pendiente', async (req, res) => {
 
 app.use('/api/auth', authRoutes);
 
-// Iniciar el servidor
-app.listen(3001, () => {
-  console.log('Servidor ejecutándose en http://localhost:3001');
+app.get('/', (req, res) => {
+  res.send('Servidor funcionando correctamente');
 });
 
-app.get('/', (req, res) => {
-    res.send('Servidor funcionando correctamente');
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
+// Iniciar el servidor
+app.listen(3001, '0.0.0.0', () => {
+  console.log('Servidor ejecutándose en http://localhost:3001');
 });
