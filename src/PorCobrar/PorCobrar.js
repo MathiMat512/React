@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import '../styles.css';
+import '../api-utils';
 
 function PorCobrar() {
     const [COA, setCOA] = useState('');
@@ -66,9 +67,12 @@ function PorCobrar() {
             return;
         }
 
+        const params = [];
+        if (COA) params.COA = COA;
+
         try {
-            const response = await fetch(`http://localhost:3001/api/ctacte?COA=${COA}`);
-            const data = await response.json();
+            const data = await window.API.ctacte(params);
+            const response = data.resultados.length > 0 ? { ok: true } : { ok: false };
 
             if (response.ok && data.resultados) {
                 const filteredResults = data.resultados;
@@ -92,11 +96,13 @@ function PorCobrar() {
             return;
         }
 
-        try {
-            const response = await fetch(`http://localhost:3001/api/deuda?COA=${COA}`);
-            const data = await response.json();
+        const params = {};
+        if (COA) params.COA = COA;
 
-            if (response.ok && data.length > 0) {
+        try {
+            const data = await window.API.deuda(params);
+
+            if (data.length > 0) {
                 setDeuda(data[0]);
                 setError('');
             } else {

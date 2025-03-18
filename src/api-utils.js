@@ -1,4 +1,4 @@
-const API_URL = '/api';
+const API_URL = 'http://192.168.1.63:3001/api';
 
 async function callAPI(endpoint, params = {}) {
     try {
@@ -16,7 +16,27 @@ async function callAPI(endpoint, params = {}) {
 }
 
 const API = {
-  buscar: (params) => callAPI('/clientes', params),
+  buscar: (params) => callAPI('/buscar', params),
+  ctacte: (params) => callAPI('/ctacte', params),
+  deuda: (params) => callAPI('/deuda', params),
+  ctapagar: (params) => callAPI('/ctapagar', params),
+  pendiente: (params) => callAPI('/pendiente', params),
+  login: async (usuario) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario })
+      });
+      if (!response.ok) {
+        throw new Error(`Error en la petición: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error en login:', error);
+      throw error;
+    }
+  }
 };
 
-windows.API = API;
+window.API = API;

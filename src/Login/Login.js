@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import logo from '../images/logo.png';
 import './Login.css';
+import '../api-utils';
 
 function Login() {
     const [usuario, setUsuario] = useState('');
@@ -24,7 +25,7 @@ function Login() {
       mostrarMensaje('Validando usuario...', 'info');
   
       try {
-        const response = await fetch('http://localhost:3001/api/auth/login', {
+        const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -32,7 +33,7 @@ function Login() {
           body: JSON.stringify({ usuario: usuarioTrimmed })
         });
   
-        const data = await response.json();
+        const data = await window.API.login(usuarioTrimmed);
         console.log('Respuesta del servidor:', data);
   
         if (!response.ok) {
