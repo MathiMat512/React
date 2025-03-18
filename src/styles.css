@@ -115,6 +115,7 @@ hr {
     width: 100% !important;
     margin-bottom: 0;
     border-spacing: 0; /* Asegura que no haya espacio entre las celdas */
+    font-size: 14px;
 }
 
 .table thead {
@@ -134,6 +135,7 @@ hr {
     padding: 12px 8px; /* Añadir más padding para dar espacio */
     z-index: 1000; /* Asegura que el encabezado esté sobre el contenido */
     backface-visibility: hidden; /* Evitar problemas de renderizado */
+    
 }
 
 /* Estilos para ordenamiento de tabla */

@@ -73,7 +73,6 @@ function SideNav() {
           <div className="nav-item"><a href="#"><i className="fas fa-envelope"></i><span className="menu-text">Contact</span></a></div>
         </div>
       </div>
-
       <div className="logout">
         <a href="#"><Link to="/login"><i className="fas fa-sign-out-alt"></i><span className="menu-text">Cerrar Sesión</span></Link></a>
       </div>

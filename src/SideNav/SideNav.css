@@ -4,7 +4,9 @@
   color: white;
   padding-left: 20px;
   padding-right: 20px;
-  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   transition: width 300ms;
@@ -91,7 +93,7 @@
   margin-left: -20px;
   padding-left: 20px;
   padding-right: 20px;
-  position: sticky;
+  position: relative;
   bottom: 0;
   transition: background-color 300ms;
 }
@@ -127,7 +129,7 @@
       top: 0;
       transition: 250ms ease; /* Transición en el estado base */
       z-index: 1025;
-      overflow: hidden; /* Oculta el contenido que se desborda */
+      overflow: scroll; /* Oculta el contenido que se desborda */
   }
   
   .side-nav.collapsed {
@@ -161,7 +163,7 @@
   }
 
   .side-nav.collapsed .nav-item .menu-text {
-      display: block;
+      display: inline-block;
       padding: 15px 0;
   }
 
