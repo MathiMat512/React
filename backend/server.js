@@ -1,8 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const Lancaster = require('./models/lancaster.model'); // Importa el modelo
-const Ctacte = require('./models/ctacte.model'); // Importa el modelo
-const Ctapagar = require('./models/ctapagar.model'); // Importa el modelo
+const Lancaster = require('./models/lancaster.model');
+const Ctacte = require('./models/ctacte.model');
+const Ctapagar = require('./models/ctapagar.model');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const path = require('path');
@@ -25,47 +25,40 @@ mongoose.connect('mongodb://localhost:27017/Prueba1', {
 }).then(() => console.log('Conectado a MongoDB'))
   .catch(err => console.error(err));
 
-  /* api de paginacion */
-  app.get('/api/PruebasDeDatos', async (req, res) => {
-    try {
-      // Parámetros de consulta para la paginación
-      const page = parseInt(req.query.page) || 1; // Página por defecto: 1
-      const limit = parseInt(req.query.limit) || 200; // Limite por defecto: 10 registros por página
-  
-      // Calculamos el número de registros a saltar (skip)
-      const skip = (page - 1) * limit;
-  
-      // Ejecutamos la consulta con paginación
-      const datos = await Lancaster.find()
-        .skip(skip) // Saltar los primeros registros
-        .limit(limit); // Limitar el número de registros
-  
-      // Contar el total de registros para la paginación
-      const totalCount = await Lancaster.countDocuments();
-  
-      // Responder con los datos paginados y el total de registros
-      res.json({
-        totalCount,
-        page,
-        limit,
-        totalPages: Math.ceil(totalCount / limit), // Número total de páginas
-        datos,
-      });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  }); 
+/* API de paginación */
+app.get('/api/PruebasDeDatos', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 200;
+    const skip = (page - 1) * limit;
 
-  function escapeRegex(text) {
-    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    const datos = await Lancaster.find()
+      .skip(skip)
+      .limit(limit);
+
+    const totalCount = await Lancaster.countDocuments();
+
+    res.json({
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+      datos,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
+});
 
-  /* buscar múltiple */
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+/* Buscar múltiple */
 app.get('/api/buscar', async (req, res) => {
   try {
-    const { NRO_DI, DSC, COA, PAIS} = req.query; // Obtiene los parámetros desde la URL
-    
-    // Construir el objeto de consulta dinámicamente
+    const { NRO_DI, DSC, COA, PAIS } = req.query;
+
     let query = {};
 
     if (NRO_DI) {
@@ -74,21 +67,17 @@ app.get('/api/buscar', async (req, res) => {
       ];
     }
 
-    // Si se proporciona el parámetro DSC (Razón Social), agregarlo a la consulta
     if (DSC) {
-      // Dividir el DSC en palabras clave y escapar caracteres especiales
       const keywords = DSC.split(/\s+/)
-                         .filter(k => k.trim() !== '')
-                         .map(k => escapeRegex(k));
-      
+        .filter(k => k.trim() !== '')
+        .map(k => escapeRegex(k));
+
       if (keywords.length > 0) {
-        // Crear regex que busque todas las palabras en cualquier orden
         const regexPattern = keywords.map(k => `(?=.*${k})`).join('') + '.*';
         query.DSC = { $regex: regexPattern, $options: 'i' };
       }
     }
 
-    // Si se proporciona el parámetro COA, agregarlo a la consulta
     if (COA) {
       query.COA = { $regex: COA, $options: 'i' };
     }
@@ -97,19 +86,16 @@ app.get('/api/buscar', async (req, res) => {
       query.PAIS = { $regex: PAIS, $options: 'i' };
     }
 
-    // Realizar la búsqueda en la base de datos con los parámetros construidos
     const resultado = await Lancaster.aggregate([
-      { $match: query }, // Filtrar por los criterios de búsqueda
+      { $match: query },
     ]);
-    
+
     const cantidadResultados = resultado.length;
 
-    // Si no se encuentran resultados
     if (cantidadResultados === 0) {
       return res.status(404).json({ message: 'No se encontraron resultados para los parámetros proporcionados' });
     }
 
-    // Responder con los resultados
     res.json({
       cantidadResultados: cantidadResultados,
       resultados: resultado
@@ -119,22 +105,33 @@ app.get('/api/buscar', async (req, res) => {
   }
 });
 
-// Api de CTACTE
-app.get('/api/ctacte', async (req, res) => {
+// API para obtener todos los COAs disponibles
+app.get('/api/allCOAs', async (req, res) => {
   try {
-    const { COA } = req.query;
+    const coas = await Ctacte.distinct('COA');
+    if (coas.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron COAs disponibles' });
+    }
+    res.json(coas);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-    let query = {};
+// API de CTACTE
+app.post('/api/ctacte', async (req, res) => {
+  try {
+    const { COAs } = req.body;
 
-    if (COA) {
-      query.COA = COA; // Búsqueda exacta en lugar de regex
+    if (!COAs || !Array.isArray(COAs) || COAs.length === 0) {
+      return res.status(400).json({ message: 'Debe proporcionar al menos un COA válido' });
     }
 
-    const resultado = await Ctacte.find(query);
+    const resultado = await Ctacte.find({ COA: { $in: COAs } });
 
     if (resultado.length === 0) {
-      return res.status(404).json({ 
-        message: 'No se encontraron resultados para el COA especificado',
+      return res.status(404).json({
+        message: 'No se encontraron resultados para los COAs especificados',
         cantidadResultados: 0,
         resultados: []
       });
@@ -144,66 +141,68 @@ app.get('/api/ctacte', async (req, res) => {
       cantidadResultados: resultado.length,
       resultados: resultado
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// API de deuda
 app.get('/api/deuda', async (req, res) => {
   try {
-      const {COA} = req.query;
+    const { COA } = req.query;
 
-      let matchStage = {};
+    let matchStage = {};
 
-      if(COA){
-        matchStage.COA = {$regex: COA, $options: 'i'}
+    if (COA) {
+      matchStage.COA = { $regex: COA, $options: 'i' };
+    }
+
+    const resultado = await Ctacte.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$COA",
+          totalCARGO: { $sum: "$CARGO_MN" },
+          totalABONO: { $sum: "$ABONO_MN" }
+        }
+      },
+      {
+        $addFields: {
+          deuda: { $subtract: ["$totalCARGO", "$totalABONO"] }
+        }
+      },
+      { $sort: { deuda: -1 } },
+      {
+        $addFields: {
+          deuda: { $toString: { $round: ["$deuda", 2] } }
+        }
       }
+    ]);
 
-      const resultado = await Ctacte.aggregate([
-        { $match: matchStage },
-          {
-              $group: {
-                  _id: "$COA",
-                  totalCARGO: { $sum: "$CARGO_MN" },
-                  totalABONO: { $sum: "$ABONO_MN" }
-              }
-          },
-          {
-              $addFields: {
-                  deuda: { $subtract: ["$totalCARGO", "$totalABONO"] }
-              }
-          },
-          { $sort: { deuda: -1 } },
-          {
-            $addFields: {
-              deuda: {$toString: {$round: ["$deuda", 2]}}
-            }
-          }
-      ]);
+    if (resultado.length === 0) {
+      return res.status(404).json({ message: `El COA ${COA} no existe o no tiene datos asociados` });
+    }
 
-      res.json(resultado);
+    res.json(resultado);
   } catch (error) {
-      res.status(500).json({ message: "Error al calcular la deuda", error });
+    res.status(500).json({ message: "Error al calcular la deuda", error });
   }
 });
 
-// Api de Ctapagar
-app.get('/api/ctapagar', async (req, res) => {
+// API de Ctapagar
+app.post('/api/ctapagar', async (req, res) => {
   try {
-    const { COA } = req.query;
+    const { COAs } = req.body;
 
-    let query = {};
-
-    if (COA) {
-      query.COA = COA; // Búsqueda exacta en lugar de regex
+    if (!COAs || !Array.isArray(COAs) || COAs.length === 0) {
+      return res.status(400).json({ message: 'Debe proporcionar al menos un COA válido' });
     }
 
-    const resultado = await Ctapagar.find(query);
+    const resultado = await Ctapagar.find({ COA: { $in: COAs } });
 
     if (resultado.length === 0) {
-      return res.status(404).json({ 
-        message: 'No se encontraron resultados para el COA especificado',
+      return res.status(404).json({
+        message: `Ninguno de los COAs (${COAs.join(', ')}) existe o tiene datos asociados`,
         cantidadResultados: 0,
         resultados: []
       });
@@ -213,47 +212,51 @@ app.get('/api/ctapagar', async (req, res) => {
       cantidadResultados: resultado.length,
       resultados: resultado
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// API de pendiente
 app.get('/api/pendiente', async (req, res) => {
   try {
-      const {COA} = req.query;
+    const { COA } = req.query;
 
-      let matchStage = {};
+    let matchStage = {};
 
-      if(COA){
-        matchStage.COA = {$regex: COA, $options: 'i'}
+    if (COA) {
+      matchStage.COA = { $regex: COA, $options: 'i' };
+    }
+
+    const resultado = await Ctapagar.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$COA",
+          totalCARGO: { $sum: "$CARGO_MN" },
+          totalABONO: { $sum: "$ABONO_MN" }
+        }
+      },
+      {
+        $addFields: {
+          pendiente: { $subtract: ["$totalABONO", "$totalCARGO"] }
+        }
+      },
+      { $sort: { deuda: -1 } },
+      {
+        $addFields: {
+          pendiente: { $toString: { $round: ["$pendiente", 2] } }
+        }
       }
+    ]);
 
-      const resultado = await Ctapagar.aggregate([
-        { $match: matchStage },
-          {
-              $group: {
-                  _id: "$COA",
-                  totalCARGO: { $sum: "$CARGO_MN" },
-                  totalABONO: { $sum: "$ABONO_MN" }
-              }
-          },
-          {
-              $addFields: {
-                pendiente: { $subtract: ["$totalABONO", "$totalCARGO"] }
-              }
-          },
-          { $sort: { deuda: -1 } },
-          {
-            $addFields: {
-              pendiente: {$toString: {$round: ["$pendiente", 2]}}
-            }
-          }
-      ]);
+    if (resultado.length === 0) {
+      return res.status(404).json({ message: `El COA ${COA} no existe o no tiene datos asociados` });
+    }
 
-      res.json(resultado);
+    res.json(resultado);
   } catch (error) {
-      res.status(500).json({ message: "Error al calcular la deuda pendiente", error });
+    res.status(500).json({ message: "Error al calcular la deuda pendiente", error });
   }
 });
 
