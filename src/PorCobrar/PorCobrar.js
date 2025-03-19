@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles.css';
 import '../api-utils';
-import * as XLSX from 'xlsx'; // Importar SheetJS
+import * as XLSX from 'xlsx';
 
 function PorCobrar() {
     const [COA, setCOA] = useState('');
@@ -10,8 +10,32 @@ function PorCobrar() {
     const [cantidadResultados, setCantidadResultados] = useState('');
     const [error, setError] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-    const [showModal, setShowModal] = useState(false); // Estado para el modal
-    const [multipleCOAs, setMultipleCOAs] = useState(''); // Estado para los COAs múltiples
+    const [showModal, setShowModal] = useState(false);
+    const [allCOAs, setAllCOAs] = useState([]);
+    const [selectedCOAs, setSelectedCOAs] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
+
+    useEffect(() => {
+        const fetchAllCOAs = async () => {
+            setLoading(true);
+            try {
+                const response = await fetch('http://localhost:3001/api/allCOAs');
+                const data = await response.json();
+                if (response.ok) {
+                    setAllCOAs(data);
+                } else {
+                    setError(data.message || 'Error al cargar la lista de COAs');
+                }
+            } catch (error) {
+                console.error('Error al cargar COAs:', error);
+                setError('Error al cargar la lista de COAs');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAllCOAs();
+    }, []);
 
     const formatDateWithSlashes = (dateInt) => {
         if (!dateInt) {
@@ -41,13 +65,13 @@ function PorCobrar() {
             const bValue = b[columnKey];
 
             if (columnKey === 'STAT_CANC') {
-                const aStatus = aValue === 'C' ? 1 : 0; // CANCELADO = 1, PENDIENTE = 0
-                const bStatus = bValue === 'C' ? 1 : 0; // CANCELADO = 1, PENDIENTE = 0
+                const aStatus = aValue === 'C' ? 1 : 0;
+                const bStatus = bValue === 'C' ? 1 : 0;
 
                 if (direction === 'asc') {
-                    return aStatus - bStatus; // PENDIENTE primero
+                    return aStatus - bStatus;
                 } else {
-                    return bStatus - aStatus; // CANCELADO primero
+                    return bStatus - aStatus;
                 }
             }
 
@@ -63,37 +87,74 @@ function PorCobrar() {
         setResultados(sortedResults);
     };
 
-    const buscarsaldo = async (coasToSearch = [COA]) => {
-        if (!coasToSearch || coasToSearch.length === 0 || coasToSearch.every(coa => !coa || coa === '.')) {
-            setError('Por favor ingrese al menos un COA válido');
-            alert("Por favor ingrese al menos un COA válido");
+    const buscarsaldo = async () => {
+        if (!COA || COA === '.' || COA.length === 0) {
+            setError('Por favor ingrese un COA válido');
+            alert("Por favor ingrese un COA válido");
             return;
         }
 
-        let allResults = [];
+        setLoading(true);
         setError('');
-
         try {
-            for (const coa of coasToSearch) {
-                const params = { COA: coa.trim() };
-                const data = await window.API.ctacte(params);
-                const response = data.resultados.length > 0 ? { ok: true } : { ok: false };
-
-                if (response.ok && data.resultados) {
-                    allResults = [...allResults, ...data.resultados];
-                }
-            }
-
-            if (allResults.length > 0) {
-                setResultados(allResults);
-                setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
+            const response = await fetch('http://localhost:3001/api/ctacte', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ COAs: [COA] }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setResultados(data.resultados);
+                setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+                setError('');
             } else {
-                setCantidadResultados('No se encontraron resultados para los COAs especificados');
+                setCantidadResultados('');
                 setResultados([]);
+                setError(data.message || 'No se encontraron resultados para el COA especificado');
             }
         } catch (error) {
             console.error('Error:', error);
             setError('Error al procesar la solicitud');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const buscarMultiple = async (coasToSearch) => {
+        if (!coasToSearch || coasToSearch.length === 0) {
+            setError('Por favor seleccione al menos un COA');
+            alert("Por favor seleccione al menos un COA");
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        try {
+            const response = await fetch('http://localhost:3001/api/ctacte', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ COAs: coasToSearch }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setResultados(data.resultados);
+                setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+                setError('');
+            } else {
+                setCantidadResultados('');
+                setResultados([]);
+                setError(data.message || 'No se encontraron resultados para los COAs especificados');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setError('Error al procesar la solicitud');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -104,20 +165,23 @@ function PorCobrar() {
             return;
         }
 
-        const params = { COA };
+        setLoading(true);
+        setError('');
         try {
-            const data = await window.API.deuda(params);
-
-            if (data.length > 0) {
+            const response = await fetch(`http://localhost:3001/api/deuda?COA=${COA}`);
+            const data = await response.json();
+            if (response.ok) {
                 setDeuda(data[0]);
                 setError('');
             } else {
                 setDeuda(null);
-                setError('No se encontraron resultados para el COA especificado');
+                setError(data.message || 'No se encontraron resultados para el COA especificado');
             }
         } catch (error) {
             console.error('Error al calcular la deuda:', error);
             setError('Error al procesar la solicitud');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -127,7 +191,9 @@ function PorCobrar() {
         setDeuda(null);
         setCantidadResultados('');
         setError('');
-        setMultipleCOAs('');
+        setSelectedCOAs([]);
+        setLoading(false);
+        setSearchTerm(''); // Limpiar el término de búsqueda al limpiar datos
     };
 
     const exportToExcel = () => {
@@ -173,15 +239,28 @@ function PorCobrar() {
         XLSX.writeFile(wb, `cuentas_por_cobrar_${date}.xlsx`);
     };
 
+    const handleCOAToggle = (coa) => {
+        setSelectedCOAs(prev =>
+            prev.includes(coa)
+                ? prev.filter(c => c !== coa)
+                : [...prev, coa]
+        );
+    };
+
     const handleMultipleSearch = () => {
-        const coasArray = multipleCOAs.split(',').map(coa => coa.trim()).filter(coa => coa.length > 0);
-        if (coasArray.length === 0) {
-            alert('Por favor ingrese al menos un COA válido');
+        if (selectedCOAs.length === 0) {
+            alert('Por favor seleccione al menos un COA');
             return;
         }
         setShowModal(false);
-        buscarsaldo(coasArray);
+        setSearchTerm(''); // Limpiar el término de búsqueda al buscar
+        buscarMultiple(selectedCOAs);
     };
+
+    // Filtrar COAs según el término de búsqueda
+    const filteredCOAs = allCOAs.filter(coa =>
+        coa.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <div className="container">
@@ -195,7 +274,6 @@ function PorCobrar() {
                         type="text"
                         className="form-control"
                         id="COA"
-                        style={{ fontFamily: 'Rubik' }}
                         placeholder="Ingrese el COA del cliente"
                         value={COA}
                         onChange={(e) => setCOA(e.target.value)}
@@ -205,22 +283,22 @@ function PorCobrar() {
 
             <div className="row g-3 mb-5">
                 <div className="col-12 col-md-3">
-                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={() => buscarsaldo()}>
+                    <button className="btn btn-secondary btn-lg w-100" onClick={buscarsaldo}>
                         Buscar
                     </button>
                 </div>
                 <div className="col-12 col-md-3">
-                    <button className="btn btn-primary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={calcularsaldo}>
+                    <button className="btn btn-primary btn-lg w-100" onClick={calcularsaldo}>
                         Calcular Deuda
                     </button>
                 </div>
                 <div className="col-12 col-md-3">
-                    <button className="btn btn-danger btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={limpiar}>
+                    <button className="btn btn-danger btn-lg w-100" onClick={limpiar}>
                         Limpiar Datos
                     </button>
                 </div>
                 <div className="col-12 col-md-3">
-                    <button className="btn btn-warning btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={() => setShowModal(true)}>
+                    <button className="btn btn-warning btn-lg w-100" onClick={() => setShowModal(true)}>
                         Búsqueda Múltiple
                     </button>
                 </div>
@@ -228,16 +306,31 @@ function PorCobrar() {
 
             <hr className="my-4" />
 
-            <div className='div-resultados'>
+            <div className="div-resultados">
                 <h2>Resultados:</h2>
                 <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
-                    <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+                    <i className="fa-solid fa-file-arrow-down"></i> Exportar a Excel
                 </button>
             </div>
 
-            {error && <div className="alert alert-danger">{error}</div>}
+            {loading && (
+                <div className="loading-socks">
+                    <div>
+                        <span className="sock">🧦</span>
+                        <span className="sock">🧦</span>
+                        <span className="sock">🧦</span>
+                    </div>
+                    <p className="loading-text">Cargando datos...</p>
+                </div>
+            )}
 
-            {deuda && (
+            {error && !loading && (
+                <div className="alert alert-danger" role="alert">
+                    {error}
+                </div>
+            )}
+
+            {deuda && !loading && (
                 <div className="bg-light p-3 rounded table-responsive">
                     <table className="table table-striped table-hover table-sm">
                         <thead className="table-primary">
@@ -260,9 +353,9 @@ function PorCobrar() {
                 </div>
             )}
 
-            {cantidadResultados && <p className="text-muted">{cantidadResultados}</p>}
+            {cantidadResultados && !loading && <p className="text-muted">{cantidadResultados}</p>}
 
-            {resultados.length > 0 && (
+            {resultados.length > 0 && !loading && (
                 <div className="bg-light p-3 rounded table-responsive">
                     <table className="table table-striped table-hover table-sm">
                         <thead className="table-primary">
@@ -305,7 +398,6 @@ function PorCobrar() {
                 </div>
             )}
 
-            {/* Modal para búsqueda múltiple */}
             {showModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog">
@@ -315,14 +407,37 @@ function PorCobrar() {
                                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                             </div>
                             <div className="modal-body">
-                                <p>Ingrese los COAs separados por comas (e.g., COA1, COA2, COA3):</p>
-                                <textarea
-                                    className="form-control"
-                                    rows="5"
-                                    value={multipleCOAs}
-                                    onChange={(e) => setMultipleCOAs(e.target.value)}
-                                    placeholder="COA1, COA2, COA3"
-                                />
+                                <p>Seleccione los COAs para buscar:</p>
+                                {/* Campo de búsqueda */}
+                                <div className="mb-3">
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Buscar COA..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                    {filteredCOAs.length > 0 ? (
+                                        filteredCOAs.map((coa, index) => (
+                                            <div key={index} className="form-check">
+                                                <input
+                                                    type="checkbox"
+                                                    className="form-check-input"
+                                                    id={`coa-${index}`}
+                                                    checked={selectedCOAs.includes(coa)}
+                                                    onChange={() => handleCOAToggle(coa)}
+                                                />
+                                                <label className="form-check-label" htmlFor={`coa-${index}`}>
+                                                    {coa}
+                                                </label>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p>No se encontraron COAs que coincidan con la búsqueda.</p>
+                                    )}
+                                </div>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>

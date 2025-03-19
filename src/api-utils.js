@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.1.63:3001/api';
+const API_URL = 'http://192.168.1.50:3001/api';
 
 async function callAPI(endpoint, params = {}) {
     try {
