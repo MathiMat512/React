@@ -81,10 +81,10 @@ function Clientes() {
 
             <div className="row g-3 mb-5">
                 <div className="col-12 col-md-6">
-                    <button className="btn btn-secondary btn-lg w-100" onClick={buscar}>Buscar</button>
+                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={buscar}>Buscar</button>
                 </div>
                 <div className="col-12 col-md-6">
-                    <button className="btn btn-danger btn-lg w-100" onClick={limpiar}>Limpiar Datos</button>
+                    <button className="btn btn-danger btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={limpiar}>Limpiar Datos</button>
                 </div>
             </div>
 

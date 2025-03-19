@@ -142,13 +142,13 @@ function PorCobrar() {
 
             <div className="row g-3 mb-5">
                 <div className="col-12 col-md-4">
-                    <button className="btn btn-secondary btn-lg w-100" onClick={buscarsaldo}>Buscar</button>
+                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={buscarsaldo}>Buscar</button>
                 </div>
                 <div className="col-12 col-md-4">
-                    <button className="btn btn-primary btn-lg w-100" onClick={calcularsaldo}>Calcular Deuda</button>
+                    <button className="btn btn-primary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={calcularsaldo}>Calcular Deuda</button>
                 </div>
                 <div className="col-12 col-md-4">
-                    <button className="btn btn-danger btn-lg w-100" onClick={limpiar}>Limpiar Datos</button>
+                    <button className="btn btn-danger btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={limpiar}>Limpiar Datos</button>
                 </div>
             </div>
 
