@@ -12,6 +12,35 @@ function PorCobrar() {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [showModal, setShowModal] = useState(false); // Estado para el modal
     const [multipleCOAs, setMultipleCOAs] = useState(''); // Estado para los COAs múltiples
+    const [selectedMonths, setSelectedMonths] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const months = [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
+    ];
+
+    const handleCheckboxChange = (month) => {
+        if (selectedMonths.includes(month)) {
+        setSelectedMonths(selectedMonths.filter((m) => m !== month));
+        } else {
+        setSelectedMonths([...selectedMonths, month]);
+        }
+    };
+
+    const toggleDropdown = () => {
+        setIsOpen(!isOpen);
+    };
 
     const formatDateWithSlashes = (dateInt) => {
         if (!dateInt) {
@@ -191,6 +220,7 @@ function PorCobrar() {
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
+                    <div style={{display: 'flex'}}>
                     <input
                         type="text"
                         className="form-control"
@@ -200,6 +230,43 @@ function PorCobrar() {
                         value={COA}
                         onChange={(e) => setCOA(e.target.value)}
                     />
+                    <br/>
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Seleccione el año</option>
+                        {(() => {
+                            let years = [];
+                            for (let i = 2025; i >= 2000; i--) {
+                                years.push(<option key={i} value={i}>{i}</option>);
+                            }
+                            return years
+                            })()};
+                    </select>
+                    </div>
+                    
+                    <br/>
+                    <div className="dropdown">
+                        <button className="btn btn-secondary dropdown-toggle"
+                                type="button" onClick={toggleDropdown}>
+                                {selectedMonths.length > 0 ? selectedMonths.join(", ") : "Seleccione el mes"}
+                        </button>
+                            <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
+                                {months.map((month, index) => (
+                                <div key={index} className="dropdown-item">
+                                    <div className="form-check">
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id={`check-${month}`}
+                                        checked={selectedMonths.includes(month)}
+                                        onChange={() => handleCheckboxChange(month)} />
+                                    <label className="form-check-label" htmlFor={`check-${month}`}>
+                                        {month}
+                                    </label>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -230,9 +297,9 @@ function PorCobrar() {
 
             <div className='div-resultados'>
                 <h2>Resultados:</h2>
-                <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
-                    <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
-                </button>
+                    <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
+                        <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+                    </button>
             </div>
 
             {error && <div className="alert alert-danger">{error}</div>}
