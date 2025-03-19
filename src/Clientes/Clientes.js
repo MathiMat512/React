@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../styles.css';
 import '../api-utils';
+import * as XLSX from 'xlsx'; // Importar SheetJS
 
 function Clientes() {
     const [NRO_DI, setNRO_DI] = useState('');
@@ -18,7 +19,7 @@ function Clientes() {
             return;
         }
 
-        const params = [];
+        const params = {};
         if (NRO_DI) params.NRO_DI = NRO_DI;
         if (DSC) params.DSC = DSC;
         if (COA) params.COA = COA;
@@ -31,11 +32,10 @@ function Clientes() {
         
         try {
             const data = await window.API.buscar(params);
-      
             const filteredResults = data.resultados.filter(item => item.EMPRESA === 1);
             setResultados(filteredResults);
             setCantidadResultados(`Se encontró ${filteredResults.length} resultados con los parámetros dados`);
-          } catch (error) {
+        } catch (error) {
             console.error('Error de búsqueda:', error);
             alert('Hubo un error en la búsqueda, por favor inténtalo nuevamente.');
         }
@@ -50,6 +50,42 @@ function Clientes() {
         setCantidadResultados('');
     };
 
+    // Función para exportar a Excel (.xlsx)
+    const exportToExcel = () => {
+        if (resultados.length === 0) {
+            alert('No hay datos para exportar.');
+            return;
+        }
+
+        // Mapear los datos a un formato compatible con SheetJS
+        const dataForExcel = resultados.map(item => ({
+            'Razón Social': item.DSC || '-',
+            'Dirección': item.DIRECCION || '-',
+            'Provincia': item.PROV || '-',
+            'Departamento': item.DPTO || '-',
+            'País': item.PAIS || '-',
+            'RUC/DNI': item.NRO_DI || item.RUC || '-',
+            'COA': item.COA || '-',
+            'Email': item.EMAIL_FE || '-',
+            'Teléfono': item.TELEFONO || item.TELEFONO1 || item.TELEFONO2 || '-',
+            'Tipo de Razón Social': item.DSC_TC || '-',
+            'Ubigeo': item.UBG || '-',
+            'Fax': item.FAX || '-',
+            'Grupo Empresarial': item.GRUPOEMP || '-'
+        }));
+
+        // Crear una hoja de trabajo
+        const ws = XLSX.utils.json_to_sheet(dataForExcel);
+
+        // Crear un libro de trabajo y añadir la hoja
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+
+        // Generar y descargar el archivo .xlsx
+        const date = new Date().toLocaleDateString().replace(/\//g, '-');
+        XLSX.writeFile(wb, `clientes_lancaster_${date}.xlsx`);
+    };
+
     return (
         <div className="container">
             <h1 className="text-center mb-4" style={{ fontFamily: 'Poppins' }}>
@@ -58,24 +94,44 @@ function Clientes() {
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-3">
-                    <input type="number" className="form-control" placeholder="Ingrese el RUC o DNI"
-                        value={NRO_DI} onChange={(e) => setNRO_DI(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && buscar()} />
+                    <input
+                        type="number"
+                        className="form-control"
+                        placeholder="Ingrese el RUC o DNI"
+                        value={NRO_DI}
+                        onChange={(e) => setNRO_DI(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && buscar()}
+                    />
                 </div>
                 <div className="col-12 col-md-4">
-                    <input type="text" className="form-control" placeholder="Ingrese la razón social"
-                        value={DSC} onChange={(e) => setDSC(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && buscar()} />
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ingrese la razón social"
+                        value={DSC}
+                        onChange={(e) => setDSC(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && buscar()}
+                    />
                 </div>
                 <div className="col-12 col-md-2">
-                    <input type="text" className="form-control" placeholder="Ingrese el COA"
-                        value={COA} onChange={(e) => setCOA(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && buscar()} />
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ingrese el COA"
+                        value={COA}
+                        onChange={(e) => setCOA(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && buscar()}
+                    />
                 </div>
                 <div className="col-12 col-md-3">
-                    <input type="text" className="form-control" placeholder="Ingrese el país"
-                        value={PAIS} onChange={(e) => setPAIS(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && buscar()} />
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ingrese el país"
+                        value={PAIS}
+                        onChange={(e) => setPAIS(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && buscar()}
+                    />
                 </div>
             </div>
 
@@ -85,6 +141,11 @@ function Clientes() {
                 </div>
                 <div className="col-12 col-md-6">
                     <button className="btn btn-danger btn-lg w-100" onClick={limpiar}>Limpiar Datos</button>
+                </div>
+                <div className="col-12 col-md-6 mt-3">
+                    <button className="btn btn-success btn-lg w-100" onClick={exportToExcel}>
+                        Exportar a Excel
+                    </button>
                 </div>
             </div>
 
@@ -105,12 +166,18 @@ function Clientes() {
                                 <div className="mb-2"><strong>País:</strong> {item.PAIS || '-'}</div>
                                 <div className="mb-2"><strong>RUC/DNI:</strong> {item.NRO_DI || item.RUC || '-'}</div>
                                 <div className="mb-2"><strong>COA:</strong> {item.COA || '-'}</div>
-                                <div className="mb-2"><button type="button" className="btn btn-primary" onClick={() => {
-                                    setClienteSeleccionado(item);
-                                    setMostrarModal(true);
-                                }}>
-                                    Detalles
-                                </button></div>
+                                <div className="mb-2">
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={() => {
+                                            setClienteSeleccionado(item);
+                                            setMostrarModal(true);
+                                        }}
+                                    >
+                                        Detalles
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -141,42 +208,57 @@ function Clientes() {
                                     <td>{item.PAIS || '-'}</td>
                                     <td>{item.NRO_DI || item.RUC || '-'}</td>
                                     <td>{item.COA || '-'}</td>
-                                    <td><button type="button" className="btn btn-primary" onClick={() => {
-                                        setClienteSeleccionado(item);
-                                        setMostrarModal(true);
-                                    }}>
-                                        Detalles
-                                    </button></td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            onClick={() => {
+                                                setClienteSeleccionado(item);
+                                                setMostrarModal(true);
+                                            }}
+                                        >
+                                            Detalles
+                                        </button>
+                                    </td>
                                 </tr>
-                                
                             ))}
                         </tbody>
                     </table>
                 </div>
 
                 {mostrarModal && clienteSeleccionado && (
-                        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                            <div className="modal-dialog">
-                                <div className="modal-content">
-                                    <div className="modal-header">
-                                        <h1 className="modal-title fs-5">Detalles de {clienteSeleccionado.DSC}</h1>
-                                        <button type="button" className="btn-close" onClick={() => setMostrarModal(false)}></button>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div className='mb-2'><strong>Email:</strong> {clienteSeleccionado.EMAIL_FE || '-'}</div>
-                                        <div className='mb-2'><strong>Teléfono:</strong> {clienteSeleccionado.TELEFONO || clienteSeleccionado.TELEFONO1 || clienteSeleccionado.TELEFONO2 || '-'}</div>
-                                        <div className='mb-2'><strong>Tipo de Razón Social:</strong> {clienteSeleccionado.DSC_TC || '-'}</div>
-                                        <div className='mb-2'><strong>Ubigeo:</strong> {clienteSeleccionado.UBG || '-'}</div>
-                                        <div className='mb-2'><strong>Fax:</strong> {clienteSeleccionado.FAX || '-'}</div>
-                                        <div className='mb-2'><strong>Grupo Empresarial:</strong> {clienteSeleccionado.GRUPOEMP || '-'}</div>
-                                    </div>
-                                    <div className="modal-footer">
-                                        <button type="button" className="btn btn-secondary" onClick={() => setMostrarModal(false)}>Cerrar</button>
-                                    </div>
+                    <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                        <div className="modal-dialog">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h1 className="modal-title fs-5">Detalles de {clienteSeleccionado.DSC}</h1>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => setMostrarModal(false)}
+                                    ></button>
+                                </div>
+                                <div className="modal-body">
+                                    <div className='mb-2'><strong>Email:</strong> {clienteSeleccionado.EMAIL_FE || '-'}</div>
+                                    <div className='mb-2'><strong>Teléfono:</strong> {clienteSeleccionado.TELEFONO || clienteSeleccionado.TELEFONO1 || clienteSeleccionado.TELEFONO2 || '-'}</div>
+                                    <div className='mb-2'><strong>Tipo de Razón Social:</strong> {clienteSeleccionado.DSC_TC || '-'}</div>
+                                    <div className='mb-2'><strong>Ubigeo:</strong> {clienteSeleccionado.UBG || '-'}</div>
+                                    <div className='mb-2'><strong>Fax:</strong> {clienteSeleccionado.FAX || '-'}</div>
+                                    <div className='mb-2'><strong>Grupo Empresarial:</strong> {clienteSeleccionado.GRUPOEMP || '-'}</div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => setMostrarModal(false)}
+                                    >
+                                        Cerrar
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </div>
+                )}
             </div>
         </div>
     );
