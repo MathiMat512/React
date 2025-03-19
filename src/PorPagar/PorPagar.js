@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import '../styles.css';
 import '../api-utils';
+import * as XLSX from 'xlsx'; // Importar SheetJS
 
-function PorPagar(){
+function PorPagar() {
     const [COA, setCOA] = useState('');
     const [resultados, setResultados] = useState([]);
     const [pendiente, setPendiente] = useState(null);
@@ -60,14 +61,14 @@ function PorPagar(){
         setResultados(sortedResults);
     };
 
-    const buscarpendiente = async()=>{
+    const buscarpendiente = async () => {
         if (!COA || COA === '.' || COA.length === 0) {
             setError('Por favor ingrese un COA válido');
             alert("Por favor ingrese un COA válido");
             return;
         }
 
-        const params = [];
+        const params = {};
         if (COA) params.COA = COA;
 
         try {
@@ -87,7 +88,7 @@ function PorPagar(){
             console.error('Error:', error);
             setError('Error al procesar la solicitud');
         }
-    }
+    };
 
     const calcularpendiente = async () => {
         if (!COA || COA === '.' || COA.length === 0) {
@@ -123,9 +124,58 @@ function PorPagar(){
         setError('');
     };
 
+    const exportToExcel = () => {
+        if (resultados.length === 0 && !pendiente) {
+            alert('No hay datos para exportar.');
+            return;
+        }
+
+        // Crear un libro de trabajo
+        const wb = XLSX.utils.book_new();
+
+        // Exportar la tabla de "pendiente" (si existe)
+        if (pendiente) {
+            const pendienteData = [
+                {
+                    'COA': pendiente._id || '-',
+                    'Total Cargo': `S/ ${pendiente.totalCARGO || '-'}`,
+                    'Total Abono': `S/ ${pendiente.totalABONO || '-'}`,
+                    'Pendiente': `S/ ${pendiente.pendiente || '-'}`,
+                }
+            ];
+            const wsPendiente = XLSX.utils.json_to_sheet(pendienteData);
+            XLSX.utils.book_append_sheet(wb, wsPendiente, 'Resumen Pendiente');
+        }
+
+        // Exportar la tabla de "resultados" (si existe)
+        if (resultados.length > 0) {
+            const dataForExcel = resultados.map(item => ({
+                'COA': item.COA || '-',
+                'Doc': item.DOC || '-',
+                'Serie': item.DOC_SERIE || '-',
+                'Número': item.DOC_NRO || '-',
+                'Fecha': formatDateWithSlashes(item.DOC_FCH),
+                'Moneda': item.MON || '-',
+                'Cargo en S/.': item.CARGO_MN || '-',
+                'Abono en S/.': item.ABONO_MN || '-',
+                'Cargo en $': item.CARGO_ME || '-',
+                'Abono en $': item.ABONO_ME || '-',
+                'Estado': item.STAT_CANC === 'C' ? 'CANCELADO' : 'PENDIENTE'
+            }));
+            const wsResultados = XLSX.utils.json_to_sheet(dataForExcel);
+            XLSX.utils.book_append_sheet(wb, wsResultados, 'Movimientos');
+        }
+
+        // Generar y descargar el archivo .xlsx
+        const date = new Date().toLocaleDateString().replace(/\//g, '-');
+        XLSX.writeFile(wb, `cuentas_por_pagar_${date}.xlsx`);
+    };
+
     return (
         <div className="container">
-            <h1 className="text-center mb-4" style={{ fontFamily: 'Poppins' }}>CUENTAS POR PAGAR LANCASTER S.A</h1>
+            <h1 className="text-center mb-4" style={{ fontFamily: 'Poppins' }}>
+                CUENTAS POR PAGAR LANCASTER S.A
+            </h1>
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
@@ -134,6 +184,7 @@ function PorPagar(){
                         className="form-control"
                         id="COA"
                         placeholder="Ingrese el COA del proveedor"
+                        style={{ fontFamily: 'Rubik' }}
                         value={COA}
                         onChange={(e) => setCOA(e.target.value)}
                     />
@@ -154,7 +205,12 @@ function PorPagar(){
 
             <hr className="my-4" />
 
-            <h2>Resultados:</h2>
+            <div className='div-resultados'>
+                <h2>Resultados:</h2>
+                <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
+                    <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+                </button>
+            </div>
 
             {error && <div className="alert alert-danger">{error}</div>}
 
@@ -225,7 +281,6 @@ function PorPagar(){
                     </table>
                 </div>
             )}
-
         </div>
     );
 }

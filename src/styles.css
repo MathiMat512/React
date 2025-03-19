@@ -195,3 +195,10 @@ hr {
     background-color: #70cde4d2;
     color: #fff;
 }
+
+.div-resultados {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}

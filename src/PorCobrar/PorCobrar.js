@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../styles.css';
 import '../api-utils';
+import * as XLSX from 'xlsx'; // Importar SheetJS
 
 function PorCobrar() {
     const [COA, setCOA] = useState('');
@@ -9,6 +10,8 @@ function PorCobrar() {
     const [cantidadResultados, setCantidadResultados] = useState('');
     const [error, setError] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const [showModal, setShowModal] = useState(false); // Estado para el modal
+    const [multipleCOAs, setMultipleCOAs] = useState(''); // Estado para los COAs múltiples
 
     const formatDateWithSlashes = (dateInt) => {
         if (!dateInt) {
@@ -60,27 +63,32 @@ function PorCobrar() {
         setResultados(sortedResults);
     };
 
-    const buscarsaldo = async () => {
-        if (!COA || COA === '.' || COA.length === 0) {
-            setError('Por favor ingrese un COA válido');
-            alert("Por favor ingrese un COA válido");
+    const buscarsaldo = async (coasToSearch = [COA]) => {
+        if (!coasToSearch || coasToSearch.length === 0 || coasToSearch.every(coa => !coa || coa === '.')) {
+            setError('Por favor ingrese al menos un COA válido');
+            alert("Por favor ingrese al menos un COA válido");
             return;
         }
 
-        const params = [];
-        if (COA) params.COA = COA;
+        let allResults = [];
+        setError('');
 
         try {
-            const data = await window.API.ctacte(params);
-            const response = data.resultados.length > 0 ? { ok: true } : { ok: false };
+            for (const coa of coasToSearch) {
+                const params = { COA: coa.trim() };
+                const data = await window.API.ctacte(params);
+                const response = data.resultados.length > 0 ? { ok: true } : { ok: false };
 
-            if (response.ok && data.resultados) {
-                const filteredResults = data.resultados;
-                setResultados(filteredResults);
-                setCantidadResultados(<strong>Se encontró {filteredResults.length} resultado(s)</strong>);
-                setError('');
+                if (response.ok && data.resultados) {
+                    allResults = [...allResults, ...data.resultados];
+                }
+            }
+
+            if (allResults.length > 0) {
+                setResultados(allResults);
+                setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
             } else {
-                setCantidadResultados('No se encontraron resultados para el COA especificado');
+                setCantidadResultados('No se encontraron resultados para los COAs especificados');
                 setResultados([]);
             }
         } catch (error) {
@@ -96,9 +104,7 @@ function PorCobrar() {
             return;
         }
 
-        const params = {};
-        if (COA) params.COA = COA;
-
+        const params = { COA };
         try {
             const data = await window.API.deuda(params);
 
@@ -121,11 +127,67 @@ function PorCobrar() {
         setDeuda(null);
         setCantidadResultados('');
         setError('');
+        setMultipleCOAs('');
+    };
+
+    const exportToExcel = () => {
+        if (resultados.length === 0 && !deuda) {
+            alert('No hay datos para exportar.');
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+
+        if (deuda) {
+            const deudaData = [
+                {
+                    'COA': deuda._id || '-',
+                    'Total Cargo': `S/ ${deuda.totalCARGO || '-'}`,
+                    'Total Abono': `S/ ${deuda.totalABONO || '-'}`,
+                    'Deuda': `S/ ${deuda.deuda || '-'}`,
+                }
+            ];
+            const wsDeuda = XLSX.utils.json_to_sheet(deudaData);
+            XLSX.utils.book_append_sheet(wb, wsDeuda, 'Resumen Deuda');
+        }
+
+        if (resultados.length > 0) {
+            const dataForExcel = resultados.map(item => ({
+                'COA': item.COA || '-',
+                'Doc': item.DOC || '-',
+                'Serie': item.DOC_SERIE || '-',
+                'Número': item.DOC_NRO || '-',
+                'Fecha': formatDateWithSlashes(item.DOC_FCH),
+                'Moneda': item.MON || '-',
+                'Cargo en S/.': item.CARGO_MN || '-',
+                'Abono en S/.': item.ABONO_MN || '-',
+                'Cargo en $': item.CARGO_ME || '-',
+                'Abono en $': item.ABONO_ME || '-',
+                'Estado': item.STAT_CANC === 'C' ? 'CANCELADO' : 'PENDIENTE'
+            }));
+            const wsResultados = XLSX.utils.json_to_sheet(dataForExcel);
+            XLSX.utils.book_append_sheet(wb, wsResultados, 'Movimientos');
+        }
+
+        const date = new Date().toLocaleDateString().replace(/\//g, '-');
+        XLSX.writeFile(wb, `cuentas_por_cobrar_${date}.xlsx`);
+    };
+
+    const handleMultipleSearch = () => {
+        const coasArray = multipleCOAs.split(',').map(coa => coa.trim()).filter(coa => coa.length > 0);
+        if (coasArray.length === 0) {
+            alert('Por favor ingrese al menos un COA válido');
+            return;
+        }
+        setShowModal(false);
+        buscarsaldo(coasArray);
     };
 
     return (
         <div className="container">
-            <h1 className="text-center mb-4" style={{ fontFamily: 'Poppins' }}>CUENTAS POR COBRAR DE CLIENTES LANCASTER S.A</h1>
+            <h1 className="text-center mb-4" style={{ fontFamily: 'Poppins' }}>
+                CUENTAS POR COBRAR DE CLIENTES LANCASTER S.A
+            </h1>
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
@@ -133,6 +195,7 @@ function PorCobrar() {
                         type="text"
                         className="form-control"
                         id="COA"
+                        style={{ fontFamily: 'Rubik' }}
                         placeholder="Ingrese el COA del cliente"
                         value={COA}
                         onChange={(e) => setCOA(e.target.value)}
@@ -141,20 +204,36 @@ function PorCobrar() {
             </div>
 
             <div className="row g-3 mb-5">
-                <div className="col-12 col-md-4">
-                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={buscarsaldo}>Buscar</button>
+                <div className="col-12 col-md-3">
+                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={() => buscarsaldo()}>
+                        Buscar
+                    </button>
                 </div>
-                <div className="col-12 col-md-4">
-                    <button className="btn btn-primary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={calcularsaldo}>Calcular Deuda</button>
+                <div className="col-12 col-md-3">
+                    <button className="btn btn-primary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={calcularsaldo}>
+                        Calcular Deuda
+                    </button>
                 </div>
-                <div className="col-12 col-md-4">
-                    <button className="btn btn-danger btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={limpiar}>Limpiar Datos</button>
+                <div className="col-12 col-md-3">
+                    <button className="btn btn-danger btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={limpiar}>
+                        Limpiar Datos
+                    </button>
+                </div>
+                <div className="col-12 col-md-3">
+                    <button className="btn btn-warning btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={() => setShowModal(true)}>
+                        Búsqueda Múltiple
+                    </button>
                 </div>
             </div>
 
             <hr className="my-4" />
 
-            <h2>Resultados:</h2>
+            <div className='div-resultados'>
+                <h2>Resultados:</h2>
+                <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
+                    <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+                </button>
+            </div>
 
             {error && <div className="alert alert-danger">{error}</div>}
 
@@ -223,6 +302,38 @@ function PorCobrar() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Modal para búsqueda múltiple */}
+            {showModal && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h1 className="modal-title fs-5">Búsqueda Múltiple de COAs</h1>
+                                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <p>Ingrese los COAs separados por comas (e.g., COA1, COA2, COA3):</p>
+                                <textarea
+                                    className="form-control"
+                                    rows="5"
+                                    value={multipleCOAs}
+                                    onChange={(e) => setMultipleCOAs(e.target.value)}
+                                    placeholder="COA1, COA2, COA3"
+                                />
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                                    Cerrar
+                                </button>
+                                <button type="button" className="btn btn-primary" onClick={handleMultipleSearch}>
+                                    Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
