@@ -122,12 +122,29 @@ app.get('/api/buscar', async (req, res) => {
 // Api de CTACTE
 app.get('/api/ctacte', async (req, res) => {
   try {
-    const { COA } = req.query;
+    const { COA, year, month } = req.query;
 
     let query = {};
 
     if (COA) {
       query.COA = COA; // Búsqueda exacta en lugar de regex
+    }
+
+    if (year) {
+      let startDate, endDate;
+
+      if (month) {
+        // Filtro por año y mes
+        const daysInMonth = new Date(year, month, 0).getDate(); // Obtiene el número de días en el mes
+        startDate = parseInt(`${year}${month.toString().padStart(2, '0')}01`, 10); // YYYYMM01
+        endDate = parseInt(`${year}${month.toString().padStart(2, '0')}${daysInMonth}`, 10); // YYYYMMDD
+      } else {
+        // Filtro solo por año
+        startDate = parseInt(`${year}0101`, 10); // YYYY0101
+        endDate = parseInt(`${year}1231`, 10);   // YYYY1231
+      }
+
+      query.DOC_FCH = { $gte: startDate, $lte: endDate };
     }
 
     const resultado = await Ctacte.find(query);

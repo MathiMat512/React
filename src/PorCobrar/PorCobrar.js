@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import '../styles.css';
 import '../api-utils';
 import * as XLSX from 'xlsx'; // Importar SheetJS
+import { id } from 'date-fns/locale';
 
 function PorCobrar() {
     const [COA, setCOA] = useState('');
@@ -14,21 +15,28 @@ function PorCobrar() {
     const [multipleCOAs, setMultipleCOAs] = useState(''); // Estado para los COAs múltiples
     const [selectedMonths, setSelectedMonths] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [selectedYear, setselectedYear] = useState(null);
+    const [selectedMonth, setSelectedMonth] = useState(null);
 
     const months = [
-        "Enero",
-        "Febrero",
-        "Marzo",
-        "Abril",
-        "Mayo",
-        "Junio",
-        "Julio",
-        "Agosto",
-        "Septiembre",
-        "Octubre",
-        "Noviembre",
-        "Diciembre",
-    ];
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+      ];
+      
+      const monthMap = {
+        "Enero": "01",
+        "Febrero": "02",
+        "Marzo": "03",
+        "Abril": "04",
+        "Mayo": "05",
+        "Junio": "06",
+        "Julio": "07",
+        "Agosto": "08",
+        "Septiembre": "09",
+        "Octubre": "10",
+        "Noviembre": "11",
+        "Diciembre": "12"
+      };
 
     const handleCheckboxChange = (month) => {
         if (selectedMonths.includes(month)) {
@@ -105,6 +113,12 @@ function PorCobrar() {
         try {
             for (const coa of coasToSearch) {
                 const params = { COA: coa.trim() };
+                if(selectedYear){
+                    params.year = selectedYear;
+                }
+                if(selectedMonth){
+                    params.month = monthMap[selectedMonth];
+                }
                 const data = await window.API.ctacte(params);
                 const response = data.resultados.length > 0 ? { ok: true } : { ok: false };
 
@@ -231,12 +245,14 @@ function PorCobrar() {
                         onChange={(e) => setCOA(e.target.value)}
                     />
                     <br/>
-                    <select class="form-select" aria-label="Default select example">
-                        <option selected>Seleccione el año</option>
+                    <select class="form-select" aria-label="Default select example"
+                    onChange={(e) => setselectedYear(e.target.value)}
+                    style={{ fontFamily: 'Rubik' }}>
+                        <option value="">Seleccione el año</option>
                         {(() => {
                             let years = [];
-                            for (let i = 2025; i >= 2000; i--) {
-                                years.push(<option key={i} value={i}>{i}</option>);
+                            for (let year = 2025; year >= 2000; year--) {
+                                years.push(<option key={year} value={year}>{year}</option>);
                             }
                             return years
                             })()};
@@ -247,24 +263,24 @@ function PorCobrar() {
                     <div className="dropdown">
                         <button className="btn btn-secondary dropdown-toggle"
                                 type="button" onClick={toggleDropdown}>
-                                {selectedMonths.length > 0 ? selectedMonths.join(", ") : "Seleccione el mes"}
                         </button>
-                            <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
-                                {months.map((month, index) => (
-                                <div key={index} className="dropdown-item">
-                                    <div className="form-check">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id={`check-${month}`}
-                                        checked={selectedMonths.includes(month)}
-                                        onChange={() => handleCheckboxChange(month)} />
-                                    <label className="form-check-label" htmlFor={`check-${month}`}>
-                                        {month}
-                                    </label>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
+                        {months.map((month, index) => (
+                            <div key={index} className="dropdown-item">
+                            <div className="form-check">
+                                <input
+                                className="form-check-input"
+                                type="radio"
+                                id={`check-${month}`}
+                                checked={selectedMonth === month}
+                                onChange={() => setSelectedMonth(month)} // Actualiza el estado con el mes seleccionado
+                                />
+                                <label className="form-check-label" htmlFor={`check-${month}`}>
+                                {month}
+                                </label>
+                            </div>
+                            </div>
+                        ))}
                         </div>
                     </div>
                 </div>
