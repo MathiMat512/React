@@ -47,6 +47,10 @@ body {
     .section ul li {
         font-size: 16px;
     }
+
+    .btn-success {
+        width: 50% !important;
+    }
 }
 
 .quick-nav-buttons {

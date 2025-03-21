@@ -9,7 +9,7 @@ const path = require('path');
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:3001',
+  origin: ['http://localhost:3001', 'http://192.168.1.50:3001'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -17,6 +17,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../build')));
+
+
 
 // Conexión a MongoDB
 mongoose.connect('mongodb://localhost:27017/Prueba1', {
@@ -214,6 +216,49 @@ app.post('/api/ctapagar', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// API para buscar COA por año
+app.get('/api/buscarCOA', async (req, res) => {
+  try {
+    const { ANO } = req.query;
+
+    let matchStage = {};
+
+    if (ANO) {
+      matchStage.ANO = { $regex: ANO, $options: 'i' };
+    }
+
+    const resultado = await Ctapagar.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$ANO",
+          totalCARGO: { $sum: "$CARGO_MN" },
+          totalABONO: { $sum: "$ABONO_MN" }
+        }
+      },
+      {
+        $addFields: {
+          deuda: { $subtract: ["$totalCARGO", "$totalABONO"] }
+        }
+      },
+      { $sort: { deuda: -1 } },
+      {
+        $addFields: {
+          deuda: { $toString: { $round: ["$deuda", 2] } }
+        }
+      }
+    ]);
+
+    if (resultado.length === 0) {
+      return res.status(404).json({ message: `El año ${ANO} no existe o no tiene datos asociados` });
+    }
+
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ message: "Error al calcular la deuda por año", error });
   }
 });
 

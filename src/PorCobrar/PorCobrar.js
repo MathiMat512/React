@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import '../styles.css';
-import '../api-utils';
 import * as XLSX from 'xlsx';
 
 function PorCobrar() {
@@ -11,22 +10,46 @@ function PorCobrar() {
     const [error, setError] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [showModal, setShowModal] = useState(false);
+    const [selectedMonths, setSelectedMonths] = useState([]);
+    const [selectedAllMonths, setSelectedAllMonths] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const [allCOAs, setAllCOAs] = useState([]);
     const [selectedCOAs, setSelectedCOAs] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const months = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    ];
+
+    const handleCheckboxChange = (month) => {
+        if (selectedMonths.includes(month)) {
+            setSelectedMonths(selectedMonths.filter((m) => m !== month));
+        } else {
+            setSelectedMonths([...selectedMonths, month]);
+        }
+    };
+
+    const handleSelectAll = () => {
+        if (selectedMonths.length === months.length) {
+            setSelectedMonths([]);
+        } else {
+            setSelectedMonths([...months]);
+        }
+    };
+
+    const toggleDropdown = () => {
+        setIsOpen(!isOpen);
+    };
 
     useEffect(() => {
         const fetchAllCOAs = async () => {
             setLoading(true);
             try {
-                const response = await fetch('http://localhost:3001/api/allCOAs');
-                const data = await response.json();
-                if (response.ok) {
-                    setAllCOAs(data);
-                } else {
-                    setError(data.message || 'Error al cargar la lista de COAs');
-                }
+                const data = await window.API.buscarAllCOAs();
+                setAllCOAs(data);
+                setError('');
             } catch (error) {
                 console.error('Error al cargar COAs:', error);
                 setError('Error al cargar la lista de COAs');
@@ -97,25 +120,14 @@ function PorCobrar() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch('http://localhost:3001/api/ctacte', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ COAs: [COA] }),
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setResultados(data.resultados);
-                setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
-                setError('');
-            } else {
-                setCantidadResultados('');
-                setResultados([]);
-                setError(data.message || 'No se encontraron resultados para el COA especificado');
-            }
+            const data = await window.API.ctacte({ COAs: [COA] }); // Cambiar a window.API.ctacte
+            setResultados(data.resultados);
+            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            setError('');
         } catch (error) {
             console.error('Error:', error);
+            setCantidadResultados('');
+            setResultados([]);
             setError('Error al procesar la solicitud');
         } finally {
             setLoading(false);
@@ -132,26 +144,14 @@ function PorCobrar() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch('http://localhost:3001/api/ctacte', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ COAs: coasToSearch }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                setResultados(data.resultados);
-                setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
-                setError('');
-            } else {
-                setCantidadResultados('');
-                setResultados([]);
-                setError(data.message || 'No se encontraron resultados para los COAs especificados');
-            }
+            const data = await window.API.ctacte({ COAs: coasToSearch }); // Cambiar a window.API.ctacte
+            setResultados(data.resultados);
+            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            setError('');
         } catch (error) {
             console.error('Error:', error);
+            setCantidadResultados('');
+            setResultados([]);
             setError('Error al procesar la solicitud');
         } finally {
             setLoading(false);
@@ -168,17 +168,12 @@ function PorCobrar() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch(`http://localhost:3001/api/deuda?COA=${COA}`);
-            const data = await response.json();
-            if (response.ok) {
-                setDeuda(data[0]);
-                setError('');
-            } else {
-                setDeuda(null);
-                setError(data.message || 'No se encontraron resultados para el COA especificado');
-            }
+            const data = await window.API.deuda({ COA });
+            setDeuda(data[0]);
+            setError('');
         } catch (error) {
             console.error('Error al calcular la deuda:', error);
+            setDeuda(null);
             setError('Error al procesar la solicitud');
         } finally {
             setLoading(false);
@@ -193,7 +188,7 @@ function PorCobrar() {
         setError('');
         setSelectedCOAs([]);
         setLoading(false);
-        setSearchTerm(''); // Limpiar el término de búsqueda al limpiar datos
+        setSearchTerm('');
     };
 
     const exportToExcel = () => {
@@ -253,11 +248,10 @@ function PorCobrar() {
             return;
         }
         setShowModal(false);
-        setSearchTerm(''); // Limpiar el término de búsqueda al buscar
+        setSearchTerm('');
         buscarMultiple(selectedCOAs);
     };
 
-    // Filtrar COAs según el término de búsqueda
     const filteredCOAs = allCOAs.filter(coa =>
         coa.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -270,6 +264,7 @@ function PorCobrar() {
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
+                    <div style={{display: 'flex'}}>
                     <input
                         type="text"
                         className="form-control"
@@ -278,6 +273,63 @@ function PorCobrar() {
                         value={COA}
                         onChange={(e) => setCOA(e.target.value)}
                     />
+                    <br/>
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Seleccione el año</option>
+                        {(() => {
+                            let years = [];
+                            for (let i = 2025; i >= 2000; i--) {
+                                years.push(<option key={i} value={i}>{i}</option>);
+                            }
+                            return years
+                        })()}
+                    </select>
+                    </div>
+                    
+                    <br/>
+                    <div className="dropdown">
+                        <button className="btn btn-secondary dropdown-toggle" 
+                                type="button" onClick={toggleDropdown}>
+                            {selectedAllMonths 
+                            ? "Todos" 
+                            : selectedMonths.length > 0 
+                                ? selectedMonths.join(", ") 
+                                : "Seleccione el mes"}
+                        </button>
+                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
+                            <div className="dropdown-item">
+                            <div className="form-check">
+                                <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="check-all"
+                                checked={selectedAllMonths}
+                                onChange={handleSelectAll}
+                                />
+                                <label className="form-check-label" htmlFor="check-all">
+                                Todos
+                                </label>
+                            </div>
+                            </div>
+                            
+                            {months.map((month, index) => (
+                            <div key={index} className="dropdown-item">
+                                <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id={`check-${month}`}
+                                    checked={selectedMonths.includes(month)}
+                                    onChange={() => handleCheckboxChange(month)}
+                                />
+                                <label className="form-check-label" htmlFor={`check-${month}`}>
+                                    {month}
+                                </label>
+                                </div>
+                            </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -408,7 +460,6 @@ function PorCobrar() {
                             </div>
                             <div className="modal-body">
                                 <p>Seleccione los COAs para buscar:</p>
-                                {/* Campo de búsqueda */}
                                 <div className="mb-3">
                                     <input
                                         type="text"

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import '../styles.css';
-import '../api-utils';
 import * as XLSX from 'xlsx';
 
 function PorPagar() {
@@ -14,19 +13,15 @@ function PorPagar() {
     const [allCOAs, setAllCOAs] = useState([]);
     const [selectedCOAs, setSelectedCOAs] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchAllCOAs = async () => {
             setLoading(true);
             try {
-                const response = await fetch('http://localhost:3001/api/allCOAs');
-                const data = await response.json();
-                if (response.ok) {
-                    setAllCOAs(data);
-                } else {
-                    setError(data.message || 'Error al cargar la lista de COAs');
-                }
+                const data = await window.API.buscarAllCOAs();
+                setAllCOAs(data);
+                setError('');
             } catch (error) {
                 console.error('Error al cargar COAs:', error);
                 setError('Error al cargar la lista de COAs');
@@ -97,25 +92,14 @@ function PorPagar() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch('http://localhost:3001/api/ctapagar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ COAs: [COA] }),
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setResultados(data.resultados);
-                setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
-                setError('');
-            } else {
-                setCantidadResultados('');
-                setResultados([]);
-                setError(data.message || 'No se encontraron resultados para el COA especificado');
-            }
+            const data = await window.API.ctapagar({ COAs: [COA] }); // Cambiar a window.API.ctapagar
+            setResultados(data.resultados);
+            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            setError('');
         } catch (error) {
             console.error('Error:', error);
+            setCantidadResultados('');
+            setResultados([]);
             setError('Error al procesar la solicitud');
         } finally {
             setLoading(false);
@@ -132,26 +116,14 @@ function PorPagar() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch('http://localhost:3001/api/ctapagar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ COAs: coasToSearch }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                setResultados(data.resultados);
-                setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
-                setError('');
-            } else {
-                setCantidadResultados('');
-                setResultados([]);
-                setError(data.message || 'No se encontraron resultados para los COAs especificados');
-            }
+            const data = await window.API.ctapagar({ COAs: coasToSearch }); // Cambiar a window.API.ctapagar
+            setResultados(data.resultados);
+            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            setError('');
         } catch (error) {
             console.error('Error:', error);
+            setCantidadResultados('');
+            setResultados([]);
             setError('Error al procesar la solicitud');
         } finally {
             setLoading(false);
@@ -168,17 +140,12 @@ function PorPagar() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch(`http://localhost:3001/api/pendiente?COA=${COA}`);
-            const data = await response.json();
-            if (response.ok) {
-                setPendiente(data[0]);
-                setError('');
-            } else {
-                setPendiente(null);
-                setError(data.message || 'No se encontraron resultados para el COA especificado');
-            }
+            const data = await window.API.pendiente({ COA });
+            setPendiente(data[0]);
+            setError('');
         } catch (error) {
             console.error('Error al calcular la deuda:', error);
+            setPendiente(null);
             setError('Error al procesar la solicitud');
         } finally {
             setLoading(false);
@@ -193,7 +160,7 @@ function PorPagar() {
         setError('');
         setSelectedCOAs([]);
         setLoading(false);
-        setSearchTerm(''); // Limpiar el término de búsqueda al limpiar datos
+        setSearchTerm('');
     };
 
     const exportToExcel = () => {
@@ -226,7 +193,7 @@ function PorPagar() {
                 'Fecha': formatDateWithSlashes(item.DOC_FCH),
                 'Moneda': item.MON || '-',
                 'Cargo en S/.': item.CARGO_MN || '-',
-                'Abono en S/.': item.ABONO_MN || '-',
+                'Abono en S/': item.ABONO_MN || '-',
                 'Cargo en $': item.CARGO_ME || '-',
                 'Abono en $': item.ABONO_ME || '-',
                 'Estado': item.STAT_CANC === 'C' ? 'CANCELADO' : 'PENDIENTE'
@@ -253,11 +220,10 @@ function PorPagar() {
             return;
         }
         setShowModal(false);
-        setSearchTerm(''); // Limpiar el término de búsqueda al buscar
+        setSearchTerm('');
         buscarMultiple(selectedCOAs);
     };
 
-    // Filtrar COAs según el término de búsqueda
     const filteredCOAs = allCOAs.filter(coa =>
         coa.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -409,7 +375,6 @@ function PorPagar() {
                             </div>
                             <div className="modal-body">
                                 <p>Seleccione los COAs para buscar:</p>
-                                {/* Campo de búsqueda */}
                                 <div className="mb-3">
                                     <input
                                         type="text"
