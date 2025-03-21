@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles.css';
 import '../api-utils';
 import * as XLSX from 'xlsx'; // Importar SheetJS
@@ -15,28 +15,37 @@ function PorCobrar() {
     const [multipleCOAs, setMultipleCOAs] = useState(''); // Estado para los COAs múltiples
     const [selectedMonths, setSelectedMonths] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedYear, setselectedYear] = useState(null);
+    const [selectedYear, setSelectedYear] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(null);
-
+    const dropdownRef = useRef(null);
     const months = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
       ];
-      
-      const monthMap = {
-        "Enero": "01",
-        "Febrero": "02",
-        "Marzo": "03",
-        "Abril": "04",
-        "Mayo": "05",
-        "Junio": "06",
-        "Julio": "07",
-        "Agosto": "08",
-        "Septiembre": "09",
-        "Octubre": "10",
-        "Noviembre": "11",
-        "Diciembre": "12"
-      };
+    const monthMap = {
+        "Enero": "01","Febrero": "02",
+        "Marzo": "03","Abril": "04",
+        "Mayo": "05","Junio": "06",
+        "Julio": "07","Agosto": "08",
+        "Septiembre": "09","Octubre": "10",
+        "Noviembre": "11","Diciembre": "12"
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false); // Cierra el dropdown
+            }
+        };
+
+        // Agrega el detector de eventos
+        document.addEventListener("mousedown", handleClickOutside);
+
+        // Limpia el detector de eventos al desmontar el componente
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     const handleCheckboxChange = (month) => {
         if (selectedMonths.includes(month)) {
@@ -171,6 +180,9 @@ function PorCobrar() {
         setCantidadResultados('');
         setError('');
         setMultipleCOAs('');
+        setSelectedMonth([12]);
+        setSelectedYear('');
+        setIsOpen(false);
     };
 
     const exportToExcel = () => {
@@ -246,7 +258,8 @@ function PorCobrar() {
                     />
                     <br/>
                     <select class="form-select" aria-label="Default select example"
-                    onChange={(e) => setselectedYear(e.target.value)}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    value={selectedYear || ""}
                     style={{ fontFamily: 'Rubik' }}>
                         <option value="">Seleccione el año</option>
                         {(() => {
@@ -260,27 +273,39 @@ function PorCobrar() {
                     </div>
                     
                     <br/>
-                    <div className="dropdown">
+                    <div className="dropdown" ref={dropdownRef}>
                         <button className="btn btn-secondary dropdown-toggle"
                                 type="button" onClick={toggleDropdown}>
+                                Seleccione el mes
                         </button>
                         <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
-                        {months.map((month, index) => (
-                            <div key={index} className="dropdown-item">
-                            <div className="form-check">
+                            <div style={{marginLeft: '6px'}}>
                                 <input
-                                className="form-check-input"
-                                type="radio"
-                                id={`check-${month}`}
-                                checked={selectedMonth === month}
-                                onChange={() => setSelectedMonth(month)} // Actualiza el estado con el mes seleccionado
+                                    className="form-check-input"
+                                    type="checkbox"
                                 />
-                                <label className="form-check-label" htmlFor={`check-${month}`}>
-                                {month}
-                                </label>
+                                <label>
+                                    Seleccionar todos
+                            </label>
                             </div>
-                            </div>
-                        ))}
+                            {months.map((month, index) => (
+                                <div key={index} className="dropdown-item" style={{ padding: 0 }}>
+                                    <label htmlFor={`check-${month}`} style={{ display: 'block', width: '100%', padding: '0.25rem 1.5rem', cursor: 'pointer' }}>
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                id={`check-${month}`}
+                                                checked={selectedMonth === month}
+                                                onChange={() => setSelectedMonth(month)}
+                                            />
+                                            <span className="form-check-label">
+                                                {month}
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

@@ -125,10 +125,14 @@ hr {
 .table thead {
     position: sticky;
     top: -18px; /* Mover el encabezado ligeramente hacia arriba */
-    z-index: 1000; /* Asegura que el encabezado esté sobre el contenido */
+    z-index: 500; /* Asegura que el encabezado esté sobre el contenido */
     background-color: white; /* Fondo sólido */
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* Añadir sombra para mejorar la visibilidad */
     backface-visibility: hidden; /* Evitar problemas de renderizado */
+}
+
+.table-primary{
+    position: sticky;
 }
 
 .table thead th {
