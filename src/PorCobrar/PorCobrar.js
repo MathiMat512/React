@@ -16,8 +16,6 @@ function PorCobrar() {
     const [selectedMonths, setSelectedMonths] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedYear, setSelectedYear] = useState(null);
-    const [selectedMonth, setSelectedMonth] = useState(null);
-    const [selectAll, setSelectAll] = useState(false);
     const dropdownRef = useRef(null);
     const months = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -122,20 +120,29 @@ function PorCobrar() {
 
         try {
             for (const coa of coasToSearch) {
-                const params = { COA: coa.trim() };
+                // Construir la URL con los parámetros correctos
+                let url = `/api/ctacte?COA=${encodeURIComponent(coa.trim())}`;
+                
                 if(selectedYear){
-                    params.year = selectedYear;
+                    url += `&year=${selectedYear}`;
                 }
-                if(selectedMonth){
-                    params.month = monthMap[selectedMonth];
+                
+                // Agregar cada mes como parámetro separado
+                if(selectedMonths.length > 0){
+                    selectedMonths.forEach(month => {
+                        url += `&month=${monthMap[month]}`;
+                    });
                 }
-                const data = await window.API.ctacte(params);
-                const response = data.resultados.length > 0 ? { ok: true } : { ok: false };
-
-                if (response.ok && data.resultados) {
+    
+                // Usar fetch directamente para tener control completo sobre la URL
+                const response = await fetch(url);
+                const data = await response.json();
+    
+                if (data.resultados && data.resultados.length > 0) {
                     allResults = [...allResults, ...data.resultados];
                 }
             }
+    
 
             if (allResults.length > 0) {
                 setResultados(allResults);
@@ -181,7 +188,7 @@ function PorCobrar() {
         setCantidadResultados('');
         setError('');
         setMultipleCOAs('');
-        setSelectedMonth([12]);
+        setSelectedMonths([12]);
         setSelectedYear('');
         setIsOpen(false);
     };

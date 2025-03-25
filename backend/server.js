@@ -122,37 +122,49 @@ app.get('/api/buscar', async (req, res) => {
 // Api de CTACTE
 app.get('/api/ctacte', async (req, res) => {
   try {
-    const { COA, year, month } = req.query;
+    const { COA, year } = req.query;
+    let months = req.query.month;
 
     let query = {};
 
     if (COA) {
-      query.COA = COA; // Búsqueda exacta en lugar de regex
+      query.COA = COA;
     }
 
     if (year) {
-      let monthConditions = [];
+      // Asegurarnos que months sea un array
+      if (!months) {
+        months = [];
+      } else if (!Array.isArray(months)) {
+        months = [months];
+      }
 
-      const months = Array.isArray(month) ? month : [month];
+      let monthConditions = [];
       
-      for (const m of months) {
-        if (m && m.length >= 2) {
-          const monthNum = parseInt(m, 10);
-          if (monthNum >= 1 && monthNum <= 12) {
-            const daysInMonth = new Date(year, monthNum, 0).getDate();
-            const startDate = parseInt(`${year}${m.padStart(2, '0')}01`, 10);
-            const endDate = parseInt(`${year}${m.padStart(2, '0')}${daysInMonth}`, 10);
-            
-            monthConditions.push({
-              DOC_FCH: { $gte: startDate, $lte: endDate }
-            });
-          }
-        }
+      // Filtrar meses válidos
+      const validMonths = months.filter(m => m && m.length >= 2)
+                               .map(m => m.padStart(2, '0'))
+                               .filter(m => {
+                                 const monthNum = parseInt(m, 10);
+                                 return monthNum >= 1 && monthNum <= 12;
+                               });
+
+      // Crear condiciones para cada mes
+      for (const m of validMonths) {
+        const monthNum = parseInt(m, 10);
+        const daysInMonth = new Date(year, monthNum, 0).getDate();
+        const startDate = parseInt(`${year}${m}01`, 10);
+        const endDate = parseInt(`${year}${m}${daysInMonth}`, 10);
+        
+        monthConditions.push({
+          DOC_FCH: { $gte: startDate, $lte: endDate }
+        });
       }
 
       if (monthConditions.length > 0) {
         query.$or = monthConditions;
-      } else {
+      } else if (year) {
+        // Si hay año pero no meses válidos, buscar todo el año
         const startDate = parseInt(`${year}0101`, 10);
         const endDate = parseInt(`${year}1231`, 10);
         query.DOC_FCH = { $gte: startDate, $lte: endDate };
