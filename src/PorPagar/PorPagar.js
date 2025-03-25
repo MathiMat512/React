@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles.css';
 import '../api-utils';
 import * as XLSX from 'xlsx'; // Importar SheetJS
@@ -10,6 +10,22 @@ function PorPagar() {
     const [cantidadResultados, setCantidadResultados] = useState('');
     const [error, setError] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(null);
+    const [selectedMonths, setSelectedMonths] = useState([]);
+    const dropdownRef = useRef(null);
+    const months = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+        "Julio", "Agosto","Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ]
+    const mapMonths = {
+        "Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04", "Mayo": "05", "Junio": "06",
+        "Julio": "07", "Agosto": "08", "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"
+    }
+
+    const useEffect = () => {
+
+    }
 
     const formatDateWithSlashes = (dateInt) => {
         if (!dateInt) {
@@ -179,6 +195,7 @@ function PorPagar() {
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
+                    <div style={{display:'flex'}} >
                     <input
                         type="text"
                         className="form-control"
@@ -188,6 +205,17 @@ function PorPagar() {
                         value={COA}
                         onChange={(e) => setCOA(e.target.value)}
                     />
+                        <select className='form-select' aria-label='Default select example' style={{ fontFamily: 'Rubik' }}>
+                            <option selected>Seleccione el año</option>
+                            {(() => {
+                                let years = [];
+                                for (let year = 2025; year >= 2000; year--) {
+                                    years.push(<option value={year}>{year}</option>);
+                                }
+                                return years;
+                            })()};
+                        </select>
+                    </div>
                 </div>
             </div>
 

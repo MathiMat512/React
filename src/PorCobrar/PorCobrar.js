@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import '../styles.css';
 import '../api-utils';
 import * as XLSX from 'xlsx'; // Importar SheetJS
-import { id } from 'date-fns/locale';
 
 function PorCobrar() {
     const [COA, setCOA] = useState('');
@@ -13,8 +12,8 @@ function PorCobrar() {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [showModal, setShowModal] = useState(false); // Estado para el modal
     const [multipleCOAs, setMultipleCOAs] = useState(''); // Estado para los COAs múltiples
-    const [selectedMonths, setSelectedMonths] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [selectedMonths, setSelectedMonths] = useState([]);
     const [selectedYear, setSelectedYear] = useState(null);
     const dropdownRef = useRef(null);
     const months = [

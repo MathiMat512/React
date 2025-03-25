@@ -232,7 +232,8 @@ app.get('/api/deuda', async (req, res) => {
 // Api de Ctapagar
 app.get('/api/ctapagar', async (req, res) => {
   try {
-    const { COA, year, month } = req.query;
+    const { COA, year } = req.query;
+    let months = req.query.month;
 
     let query = {};
 
@@ -241,20 +242,38 @@ app.get('/api/ctapagar', async (req, res) => {
     }
 
     if (year) {
-      let startDate, endDate
-
-      if (month) {
-        // Filtro por año y mes
-        const daysInMonth = new Date(year, month, 0).getDate(); // Obtiene el número de días en el mes
-        startDate = parseInt(`${year}${month.toString().padStart(2, '0')}01`, 10); // YYYYMM01
-        endDate = parseInt(`${year}${month.toString().padStart(2, '0')}${daysInMonth}`, 10); // YYYYMMDD
-      } else {
-        // Filtro solo por año
-        startDate = parseInt(`${year}0101`, 10); // YYYY0101
-        endDate = parseInt(`${year}1231`, 10);   // YYYY1231
+      if (!months) {
+        months = [];  
+      } else if (!Array.isArray(months)) {
+        months = [months];
       }
 
-      query.DOC_FCH = { $gte: startDate, $lte: endDate };
+      let monthConditions = [];
+      
+      const validMonths = months.filter(m => m && m.length >= 2)
+                                .map(m => m.padStart(2, '0'))
+                                .filter(m => {
+                                  const monthNum = parseInt(m, 10);
+                                  return monthNum >= 1 && monthNum <= 12;
+                                });
+      for(const m of validMonths) {
+        const monthNum = parseInt(m, 10);
+        const daysInMonth = new Date(year, monthNum, 0).getDate();
+        const startDate = parseInt(`${year}${m}01`, 10);
+        const endDate = parseInt(`${year}${m}${daysInMonth}`, 10);
+
+        monthConditions.push({
+          DOC_FCH: { $gte: startDate, $lte: endDate }
+        });
+      }
+
+      if (monthConditions.length > 0) {
+        query.$or = monthConditions;
+      } else if (year) {
+        const startDate = parseInt(`${year}0101`, 10);
+        const endDate = parseInt(`${year}1231`, 10);
+        query.DOC_FCH = { $gte: startDate, $lte: endDate };
+      }
     }
 
     const resultado = await Ctapagar.find(query);
