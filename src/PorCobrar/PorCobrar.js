@@ -17,6 +17,7 @@ function PorCobrar() {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedYear, setSelectedYear] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(null);
+    const [selectAll, setSelectAll] = useState(false);
     const dropdownRef = useRef(null);
     const months = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -47,13 +48,13 @@ function PorCobrar() {
         };
     }, []);
 
-    const handleCheckboxChange = (month) => {
+    const handleCheckboxChange =(month) => {
         if (selectedMonths.includes(month)) {
-        setSelectedMonths(selectedMonths.filter((m) => m !== month));
+            setSelectedMonths(selectedMonths.filter((m) => m !== month));
         } else {
-        setSelectedMonths([...selectedMonths, month]);
+            setSelectedMonths([...selectedMonths, month]);
         }
-    };
+    }
 
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
@@ -271,7 +272,6 @@ function PorCobrar() {
                             })()};
                     </select>
                     </div>
-                    
                     <br/>
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn btn-secondary dropdown-toggle"
@@ -284,9 +284,7 @@ function PorCobrar() {
                                     className="form-check-input"
                                     type="checkbox"
                                 />
-                                <label>
-                                    Seleccionar todos
-                            </label>
+                                <label>Seleccionar todos</label>
                             </div>
                             {months.map((month, index) => (
                                 <div key={index} className="dropdown-item" style={{ padding: 0 }}>
@@ -296,8 +294,8 @@ function PorCobrar() {
                                                 className="form-check-input"
                                                 type="checkbox"
                                                 id={`check-${month}`}
-                                                checked={selectedMonth === month}
-                                                onChange={() => setSelectedMonth(month)}
+                                                checked={selectedMonths.includes(month)}
+                                                onChange={() => handleCheckboxChange(month)}
                                             />
                                             <span className="form-check-label">
                                                 {month}

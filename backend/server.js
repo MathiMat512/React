@@ -131,20 +131,32 @@ app.get('/api/ctacte', async (req, res) => {
     }
 
     if (year) {
-      let startDate, endDate;
+      let monthConditions = [];
 
-      if (month) {
-        // Filtro por año y mes
-        const daysInMonth = new Date(year, month, 0).getDate(); // Obtiene el número de días en el mes
-        startDate = parseInt(`${year}${month.toString().padStart(2, '0')}01`, 10); // YYYYMM01
-        endDate = parseInt(`${year}${month.toString().padStart(2, '0')}${daysInMonth}`, 10); // YYYYMMDD
-      } else {
-        // Filtro solo por año
-        startDate = parseInt(`${year}0101`, 10); // YYYY0101
-        endDate = parseInt(`${year}1231`, 10);   // YYYY1231
+      const months = Array.isArray(month) ? month : [month];
+      
+      for (const m of months) {
+        if (m && m.length >= 2) {
+          const monthNum = parseInt(m, 10);
+          if (monthNum >= 1 && monthNum <= 12) {
+            const daysInMonth = new Date(year, monthNum, 0).getDate();
+            const startDate = parseInt(`${year}${m.padStart(2, '0')}01`, 10);
+            const endDate = parseInt(`${year}${m.padStart(2, '0')}${daysInMonth}`, 10);
+            
+            monthConditions.push({
+              DOC_FCH: { $gte: startDate, $lte: endDate }
+            });
+          }
+        }
       }
 
-      query.DOC_FCH = { $gte: startDate, $lte: endDate };
+      if (monthConditions.length > 0) {
+        query.$or = monthConditions;
+      } else {
+        const startDate = parseInt(`${year}0101`, 10);
+        const endDate = parseInt(`${year}1231`, 10);
+        query.DOC_FCH = { $gte: startDate, $lte: endDate };
+      }
     }
 
     const resultado = await Ctacte.find(query);
