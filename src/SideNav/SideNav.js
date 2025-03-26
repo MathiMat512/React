@@ -67,10 +67,6 @@ function SideNav() {
           <div className="nav-item"><Link to="/clientes"><i className="fa-solid fa-users"></i><span className="menu-text">Clientes</span></Link></div>
           <div className="nav-item"><Link to="/porcobrar"><i className="fa-solid fa-hand-holding-dollar"></i><span className="menu-text">Por Cobrar</span></Link></div>
           <div className="nav-item"><Link to="/porpagar"><i className="fa-solid fa-money-check-dollar"></i><span className="menu-text">Por Pagar</span></Link></div>
-          <div className="nav-item"><a href="#"><i className="fas fa-calendar-alt"></i><span className="menu-text">Events</span></a></div>
-          <div className="nav-item"><a href="#"><i className="fas fa-info-circle"></i><span className="menu-text">About</span></a></div>
-          <div className="nav-item"><a href="#"><i className="fas fa-cogs"></i><span className="menu-text">Services</span></a></div>
-          <div className="nav-item"><a href="#"><i className="fas fa-envelope"></i><span className="menu-text">Contact</span></a></div>
         </div>
       </div>
       <div className="logout">
