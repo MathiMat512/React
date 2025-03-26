@@ -281,10 +281,10 @@ function PorCobrar() {
                     <br/>
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn btn-secondary dropdown-toggle"
-                                type="button" onClick={toggleDropdown}>
+                                type="button" onClick={toggleDropdown} style={{ fontFamily: 'Rubik' }}>
                                 Seleccione el mes
                         </button>
-                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
+                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`} style={{fontFamily: 'Rubik'}}>
                             <div style={{marginLeft: '6px'}}>
                                 <input
                                     className="form-check-input"
