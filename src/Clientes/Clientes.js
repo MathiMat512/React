@@ -34,7 +34,7 @@ function Clientes() {
             const data = await window.API.buscar(params);
             const filteredResults = data.resultados.filter(item => item.EMPRESA === 1);
             setResultados(filteredResults);
-            setCantidadResultados(`Se encontró ${filteredResults.length} resultados con los parámetros dados`);
+            setCantidadResultados(<strong>Se encontró {filteredResults.length} resultados con los parámetros dados</strong>);
         } catch (error) {
             console.error('Error de búsqueda:', error);
             alert('Hubo un error en la búsqueda, por favor inténtalo nuevamente.');
