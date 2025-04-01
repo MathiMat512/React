@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles.css';
 import * as XLSX from 'xlsx';
 
@@ -14,6 +14,31 @@ function PorPagar() {
     const [selectedCOAs, setSelectedCOAs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedMonths, setSelectedMonths] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(null);
+    const dropdownRef = useRef(null);
+    const months = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+    const monthMap = {
+        "Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04",
+        "Mayo": "05", "Junio": "06", "Julio": "07", "Agosto": "08",
+        "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const fetchAllCOAs = async () => {
@@ -33,15 +58,11 @@ function PorPagar() {
     }, []);
 
     const formatDateWithSlashes = (dateInt) => {
-        if (!dateInt) {
-            return '-';
-        }
+        if (!dateInt) return '-';
         try {
             const dateString = dateInt.toString().padStart(8, '0');
-            if (dateString.length !== 8) {
-                return '-';
-            }
-            return dateString.slice(0, 4) + '/' + dateString.slice(4, 6) + '/' + dateString.slice(6, 8);
+            if (dateString.length !== 8) return '-';
+            return `${dateString.slice(0, 4)}/${dateString.slice(4, 6)}/${dateString.slice(6, 8)}`;
         } catch (error) {
             console.error('Error al formatear fecha:', error);
             return '-';
@@ -62,28 +83,19 @@ function PorPagar() {
             if (columnKey === 'STAT_CANC') {
                 const aStatus = aValue === 'C' ? 1 : 0;
                 const bStatus = bValue === 'C' ? 1 : 0;
-
-                if (direction === 'asc') {
-                    return aStatus - bStatus;
-                } else {
-                    return bStatus - aStatus;
-                }
+                return direction === 'asc' ? aStatus - bStatus : bStatus - aStatus;
             }
 
-            if (aValue < bValue) {
-                return direction === 'asc' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return direction === 'asc' ? 1 : -1;
-            }
-            return aValue > bValue ? 1 : -1;
+            if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+            return 0;
         });
 
         setResultados(sortedResults);
     };
 
     const buscarpendiente = async () => {
-        if (!COA || COA === '.' || COA.length === 0) {
+        if (!COA || COA.trim() === '' || COA === '.') {
             setError('Por favor ingrese un COA válido');
             alert("Por favor ingrese un COA válido");
             return;
@@ -92,7 +104,13 @@ function PorPagar() {
         setLoading(true);
         setError('');
         try {
-            const data = await window.API.ctapagar({ COAs: [COA] }); // Cambiar a window.API.ctapagar
+            const params = { COA };
+            if (selectedYear) params.year = selectedYear;
+            if (selectedMonths.length > 0) {
+                params.month = selectedMonths.map(month => monthMap[month]).join(',');
+            }
+
+            const data = await window.API.ctapagar(params);
             setResultados(data.resultados);
             setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
             setError('');
@@ -116,9 +134,21 @@ function PorPagar() {
         setLoading(true);
         setError('');
         try {
-            const data = await window.API.ctapagar({ COAs: coasToSearch }); // Cambiar a window.API.ctapagar
-            setResultados(data.resultados);
-            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            let allResults = [];
+            for (const coa of coasToSearch) {
+                const params = { COA: coa };
+                if (selectedYear) params.year = selectedYear;
+                if (selectedMonths.length > 0) {
+                    params.month = selectedMonths.map(month => monthMap[month]).join(',');
+                }
+                const data = await window.API.ctapagar(params);
+                if (data.resultados && data.resultados.length > 0) {
+                    allResults = [...allResults, ...data.resultados];
+                }
+            }
+
+            setResultados(allResults);
+            setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
             setError('');
         } catch (error) {
             console.error('Error:', error);
@@ -131,7 +161,7 @@ function PorPagar() {
     };
 
     const calcularpendiente = async () => {
-        if (!COA || COA === '.' || COA.length === 0) {
+        if (!COA || COA.trim() === '' || COA === '.') {
             setError('Por favor ingrese un COA válido');
             alert("Por favor ingrese un COA válido");
             return;
@@ -161,6 +191,9 @@ function PorPagar() {
         setSelectedCOAs([]);
         setLoading(false);
         setSearchTerm('');
+        setSelectedMonths([]);
+        setSelectedYear(null);
+        setIsOpen(false);
     };
 
     const exportToExcel = () => {
@@ -172,14 +205,12 @@ function PorPagar() {
         const wb = XLSX.utils.book_new();
 
         if (pendiente) {
-            const pendienteData = [
-                {
-                    'COA': pendiente._id || '-',
-                    'Total Cargo': `S/ ${pendiente.totalCARGO || '-'}`,
-                    'Total Abono': `S/ ${pendiente.totalABONO || '-'}`,
-                    'Pendiente': `S/ ${pendiente.pendiente || '-'}`,
-                }
-            ];
+            const pendienteData = [{
+                'COA': pendiente._id || '-',
+                'Total Cargo': `S/ ${pendiente.totalCARGO || '-'}`,
+                'Total Abono': `S/ ${pendiente.totalABONO || '-'}`,
+                'Pendiente': `S/ ${pendiente.pendiente || '-'}`,
+            }];
             const wsPendiente = XLSX.utils.json_to_sheet(pendienteData);
             XLSX.utils.book_append_sheet(wb, wsPendiente, 'Resumen Pendiente');
         }
@@ -204,6 +235,18 @@ function PorPagar() {
 
         const date = new Date().toLocaleDateString().replace(/\//g, '-');
         XLSX.writeFile(wb, `cuentas_por_pagar_${date}.xlsx`);
+    };
+
+    const handleCheckboxChange = (month) => {
+        setSelectedMonths(prev =>
+            prev.includes(month)
+                ? prev.filter(m => m !== month)
+                : [...prev, month]
+        );
+    };
+
+    const toggleDropdown = () => {
+        setIsOpen(!isOpen);
     };
 
     const handleCOAToggle = (coa) => {
@@ -236,15 +279,63 @@ function PorPagar() {
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="COA"
-                        placeholder="Ingrese el COA del proveedor"
-                        style={{ fontFamily: 'Rubik' }}
-                        value={COA}
-                        onChange={(e) => setCOA(e.target.value)}
-                    />
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="COA"
+                            placeholder="Ingrese el COA del proveedor"
+                            style={{ fontFamily: 'Rubik' }}
+                            value={COA}
+                            onChange={(e) => setCOA(e.target.value)}
+                        />
+                        <select
+                            className="form-select"
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            value={selectedYear || ""}
+                            style={{ fontFamily: 'Rubik' }}
+                        >
+                            <option value="">Seleccione el año</option>
+                            {(() => {
+                                let years = [];
+                                for (let year = 2025; year >= 2000; year--) {
+                                    years.push(<option key={year} value={year}>{year}</option>);
+                                }
+                                return years;
+                            })()}
+                        </select>
+                    </div>
+                    <br />
+                    <div className="dropdown" ref={dropdownRef}>
+                        <button
+                            className="btn btn-secondary dropdown-toggle"
+                            type="button"
+                            onClick={toggleDropdown}
+                        >
+                            Seleccione el mes
+                        </button>
+                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
+                            {months.map((month, index) => (
+                                <div key={index} className="dropdown-item" style={{ padding: 0 }}>
+                                    <label
+                                        htmlFor={`check-${month}`}
+                                        style={{ display: 'block', width: '100%', padding: '0.25rem 1.5rem', cursor: 'pointer' }}
+                                    >
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                id={`check-${month}`}
+                                                checked={selectedMonths.includes(month)}
+                                                onChange={() => handleCheckboxChange(month)}
+                                            />
+                                            <span className="form-check-label">{month}</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -31,8 +31,18 @@ function Clientes() {
         }
         
         try {
+            console.log('Parámetros enviados:', params); // Log para depuración
             const data = await window.API.buscar(params);
-            const filteredResults = data.resultados.filter(item => item.EMPRESA === 1);
+            console.log('Respuesta de la API:', data); // Log para depuración
+            // Depuración del filtro EMPRESA
+            console.log('Resultados sin filtrar:', data.resultados);
+            const filteredResults = data.resultados.filter(item => {
+                const hasEmpresa = 'EMPRESA' in item;
+                const empresaValue = hasEmpresa ? item.EMPRESA : null;
+                console.log(`Item: ${item.DSC || 'Sin DSC'}, Tiene EMPRESA: ${hasEmpresa}, Valor EMPRESA: ${empresaValue}`);
+                return hasEmpresa && item.EMPRESA === 1;
+            });
+            console.log('Resultados filtrados:', filteredResults);
             setResultados(filteredResults);
             setCantidadResultados(`Se encontró ${filteredResults.length} resultados con los parámetros dados`);
         } catch (error) {
@@ -153,7 +163,7 @@ function Clientes() {
             <div className='div-resultados'>
                 <h2>Resultados:</h2>
                 <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
-                    <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+                    <i className="fa-solid fa-file-arrow-down"></i> Exportar a Excel
                 </button>
             </div>
             

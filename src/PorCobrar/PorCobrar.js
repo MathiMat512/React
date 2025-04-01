@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles.css';
 import * as XLSX from 'xlsx';
 
@@ -11,37 +11,34 @@ function PorCobrar() {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [showModal, setShowModal] = useState(false);
     const [selectedMonths, setSelectedMonths] = useState([]);
-    const [selectedAllMonths, setSelectedAllMonths] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [allCOAs, setAllCOAs] = useState([]);
-    const [selectedCOAs, setSelectedCOAs] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-
+    const [selectedYear, setSelectedYear] = useState(null);
+    const dropdownRef = useRef(null);
     const months = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     ];
-
-    const handleCheckboxChange = (month) => {
-        if (selectedMonths.includes(month)) {
-            setSelectedMonths(selectedMonths.filter((m) => m !== month));
-        } else {
-            setSelectedMonths([...selectedMonths, month]);
-        }
+    const monthMap = {
+        "Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04",
+        "Mayo": "05", "Junio": "06", "Julio": "07", "Agosto": "08",
+        "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"
     };
+    const [loading, setLoading] = useState(false);
+    const [allCOAs, setAllCOAs] = useState([]);
+    const [selectedCOAs, setSelectedCOAs] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const handleSelectAll = () => {
-        if (selectedMonths.length === months.length) {
-            setSelectedMonths([]);
-        } else {
-            setSelectedMonths([...months]);
-        }
-    };
-
-    const toggleDropdown = () => {
-        setIsOpen(!isOpen);
-    };
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const fetchAllCOAs = async () => {
@@ -61,15 +58,11 @@ function PorCobrar() {
     }, []);
 
     const formatDateWithSlashes = (dateInt) => {
-        if (!dateInt) {
-            return '-';
-        }
+        if (!dateInt) return '-';
         try {
             const dateString = dateInt.toString().padStart(8, '0');
-            if (dateString.length !== 8) {
-                return '-';
-            }
-            return dateString.slice(0, 4) + '/' + dateString.slice(4, 6) + '/' + dateString.slice(6, 8);
+            if (dateString.length !== 8) return '-';
+            return `${dateString.slice(0, 4)}/${dateString.slice(4, 6)}/${dateString.slice(6, 8)}`;
         } catch (error) {
             console.error('Error al formatear fecha:', error);
             return '-';
@@ -90,28 +83,19 @@ function PorCobrar() {
             if (columnKey === 'STAT_CANC') {
                 const aStatus = aValue === 'C' ? 1 : 0;
                 const bStatus = bValue === 'C' ? 1 : 0;
-
-                if (direction === 'asc') {
-                    return aStatus - bStatus;
-                } else {
-                    return bStatus - aStatus;
-                }
+                return direction === 'asc' ? aStatus - bStatus : bStatus - aStatus;
             }
 
-            if (aValue < bValue) {
-                return direction === 'asc' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return direction === 'asc' ? 1 : -1;
-            }
-            return aValue > bValue ? 1 : -1;
+            if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+            return 0;
         });
 
         setResultados(sortedResults);
     };
 
     const buscarsaldo = async () => {
-        if (!COA || COA === '.' || COA.length === 0) {
+        if (!COA || COA.trim() === '' || COA === '.') {
             setError('Por favor ingrese un COA válido');
             alert("Por favor ingrese un COA válido");
             return;
@@ -120,7 +104,13 @@ function PorCobrar() {
         setLoading(true);
         setError('');
         try {
-            const data = await window.API.ctacte({ COAs: [COA] }); // Cambiar a window.API.ctacte
+            const params = { COA };
+            if (selectedYear) params.year = selectedYear;
+            if (selectedMonths.length > 0) {
+                params.month = selectedMonths.map(month => monthMap[month]).join(',');
+            }
+
+            const data = await window.API.ctacte(params);
             setResultados(data.resultados);
             setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
             setError('');
@@ -144,9 +134,21 @@ function PorCobrar() {
         setLoading(true);
         setError('');
         try {
-            const data = await window.API.ctacte({ COAs: coasToSearch }); // Cambiar a window.API.ctacte
-            setResultados(data.resultados);
-            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            let allResults = [];
+            for (const coa of coasToSearch) {
+                const params = { COA: coa };
+                if (selectedYear) params.year = selectedYear;
+                if (selectedMonths.length > 0) {
+                    params.month = selectedMonths.map(month => monthMap[month]).join(',');
+                }
+                const data = await window.API.ctacte(params);
+                if (data.resultados && data.resultados.length > 0) {
+                    allResults = [...allResults, ...data.resultados];
+                }
+            }
+
+            setResultados(allResults);
+            setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
             setError('');
         } catch (error) {
             console.error('Error:', error);
@@ -159,7 +161,7 @@ function PorCobrar() {
     };
 
     const calcularsaldo = async () => {
-        if (!COA || COA === '.' || COA.length === 0) {
+        if (!COA || COA.trim() === '' || COA === '.') {
             setError('Por favor ingrese un COA válido');
             alert("Por favor ingrese un COA válido");
             return;
@@ -186,8 +188,10 @@ function PorCobrar() {
         setDeuda(null);
         setCantidadResultados('');
         setError('');
+        setSelectedMonths([]);
+        setSelectedYear(null);
+        setIsOpen(false);
         setSelectedCOAs([]);
-        setLoading(false);
         setSearchTerm('');
     };
 
@@ -200,14 +204,12 @@ function PorCobrar() {
         const wb = XLSX.utils.book_new();
 
         if (deuda) {
-            const deudaData = [
-                {
-                    'COA': deuda._id || '-',
-                    'Total Cargo': `S/ ${deuda.totalCARGO || '-'}`,
-                    'Total Abono': `S/ ${deuda.totalABONO || '-'}`,
-                    'Deuda': `S/ ${deuda.deuda || '-'}`,
-                }
-            ];
+            const deudaData = [{
+                'COA': deuda._id || '-',
+                'Total Cargo': `S/ ${deuda.totalCARGO || '-'}`,
+                'Total Abono': `S/ ${deuda.totalABONO || '-'}`,
+                'Deuda': `S/ ${deuda.deuda || '-'}`,
+            }];
             const wsDeuda = XLSX.utils.json_to_sheet(deudaData);
             XLSX.utils.book_append_sheet(wb, wsDeuda, 'Resumen Deuda');
         }
@@ -232,6 +234,18 @@ function PorCobrar() {
 
         const date = new Date().toLocaleDateString().replace(/\//g, '-');
         XLSX.writeFile(wb, `cuentas_por_cobrar_${date}.xlsx`);
+    };
+
+    const handleCheckboxChange = (month) => {
+        setSelectedMonths(prev =>
+            prev.includes(month)
+                ? prev.filter(m => m !== month)
+                : [...prev, month]
+        );
+    };
+
+    const toggleDropdown = () => {
+        setIsOpen(!isOpen);
     };
 
     const handleCOAToggle = (coa) => {
@@ -264,69 +278,59 @@ function PorCobrar() {
 
             <div className="row g-3 mb-4">
                 <div className="col-12 col-md-12">
-                    <div style={{display: 'flex'}}>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="COA"
-                        placeholder="Ingrese el COA del cliente"
-                        value={COA}
-                        onChange={(e) => setCOA(e.target.value)}
-                    />
-                    <br/>
-                    <select class="form-select" aria-label="Default select example">
-                        <option selected>Seleccione el año</option>
-                        {(() => {
-                            let years = [];
-                            for (let i = 2025; i >= 2000; i--) {
-                                years.push(<option key={i} value={i}>{i}</option>);
-                            }
-                            return years
-                        })()}
-                    </select>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="COA"
+                            placeholder="Ingrese el COA del cliente"
+                            value={COA}
+                            onChange={(e) => setCOA(e.target.value)}
+                        />
+                        <select
+                            className="form-select"
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            value={selectedYear || ""}
+                            style={{ fontFamily: 'Rubik' }}
+                        >
+                            <option value="">Seleccione el año</option>
+                            {(() => {
+                                let years = [];
+                                for (let year = 2025; year >= 2000; year--) {
+                                    years.push(<option key={year} value={year}>{year}</option>);
+                                }
+                                return years;
+                            })()}
+                        </select>
                     </div>
-                    
-                    <br/>
-                    <div className="dropdown">
-                        <button className="btn btn-secondary dropdown-toggle" 
-                                type="button" onClick={toggleDropdown}>
-                            {selectedAllMonths 
-                            ? "Todos" 
-                            : selectedMonths.length > 0 
-                                ? selectedMonths.join(", ") 
-                                : "Seleccione el mes"}
+                    <br />
+                    <div className="dropdown" ref={dropdownRef}>
+                        <button
+                            className="btn btn-secondary dropdown-toggle"
+                            type="button"
+                            onClick={toggleDropdown}
+                        >
+                            Seleccione el mes
                         </button>
                         <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
-                            <div className="dropdown-item">
-                            <div className="form-check">
-                                <input
-                                className="form-check-input"
-                                type="checkbox"
-                                id="check-all"
-                                checked={selectedAllMonths}
-                                onChange={handleSelectAll}
-                                />
-                                <label className="form-check-label" htmlFor="check-all">
-                                Todos
-                                </label>
-                            </div>
-                            </div>
-                            
                             {months.map((month, index) => (
-                            <div key={index} className="dropdown-item">
-                                <div className="form-check">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    id={`check-${month}`}
-                                    checked={selectedMonths.includes(month)}
-                                    onChange={() => handleCheckboxChange(month)}
-                                />
-                                <label className="form-check-label" htmlFor={`check-${month}`}>
-                                    {month}
-                                </label>
+                                <div key={index} className="dropdown-item" style={{ padding: 0 }}>
+                                    <label
+                                        htmlFor={`check-${month}`}
+                                        style={{ display: 'block', width: '100%', padding: '0.25rem 1.5rem', cursor: 'pointer' }}
+                                    >
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                id={`check-${month}`}
+                                                checked={selectedMonths.includes(month)}
+                                                onChange={() => handleCheckboxChange(month)}
+                                            />
+                                            <span className="form-check-label">{month}</span>
+                                        </div>
+                                    </label>
                                 </div>
-                            </div>
                             ))}
                         </div>
                     </div>

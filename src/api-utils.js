@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.1.50:3001/api';
+const API_URL = 'http://192.168.1.50:3001'; // URL base sin el prefijo /api
 
 async function callAPI(endpoint, options = {}) {
   try {
@@ -22,11 +22,15 @@ async function callAPI(endpoint, options = {}) {
       fetchOptions.body = JSON.stringify(body);
     }
 
+    console.log('Request URL:', url.toString()); // Log para depuración
+    console.log('Request Options:', fetchOptions); // Log para depuración
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
       throw new Error(`Error en la petición: ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    console.log('Response Data:', data); // Log para depuración
+    return data;
   } catch (error) {
     console.error('Error al llamar a la API:', error);
     throw error;
@@ -34,15 +38,15 @@ async function callAPI(endpoint, options = {}) {
 }
 
 const API = {
-  buscar: (params) => callAPI('/buscar', { method: 'POST', body: params }),
-  ctacte: (params) => callAPI('/ctacte', { method: 'POST', body: params }),
-  deuda: (params) => callAPI('/deuda', { method: 'GET', params }),
-  ctapagar: (params) => callAPI('/ctapagar', { method: 'POST', body: params }),
-  pendiente: (params) => callAPI('/pendiente', { method: 'GET', params }),
-  buscarAllCOAs: () => callAPI('/allCOAs', { method: 'GET' }),
+  buscar: (params) => callAPI('/api/buscar', { method: 'GET', params }), // Ajustado a GET y endpoint correcto
+  ctacte: (params) => callAPI('/api/ctacte', { method: 'GET', params }), // Ajustado a GET
+  deuda: (params) => callAPI('/api/deuda', { method: 'GET', params }),
+  ctapagar: (params) => callAPI('/api/ctapagar', { method: 'GET', params }), // Ajustado a GET
+  pendiente: (params) => callAPI('/api/pendiente', { method: 'GET', params }),
+  buscarAllCOAs: () => callAPI('/allCOAs', { method: 'GET' }), // Nota: Este endpoint no existe en el backend
   login: async (usuario) => {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario })
