@@ -7,6 +7,8 @@
     text-align: center;
     color: white;
     min-height: 400px;
+    background-color: rgba(100, 100, 100, 0.171);
+    background-blend-mode: multiply;
  }
  
  .quick-nav {

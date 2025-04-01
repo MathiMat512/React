@@ -10,13 +10,16 @@ function PorPagar() {
     const [error, setError] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [showModal, setShowModal] = useState(false);
+    const [multipleCOAs, setMultipleCOAs] = useState(''); // Nuevo estado para COAs manuales
     const [allCOAs, setAllCOAs] = useState([]);
     const [selectedCOAs, setSelectedCOAs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonths, setSelectedMonths] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [selectAllMonths, setSelectAllMonths] = useState(false); // Nuevo estado para "Seleccionar todos"
     const [selectedYear, setSelectedYear] = useState(null);
+    const [useManualInput, setUseManualInput] = useState(false); // Nuevo estado para alternar entre modos de búsqueda
     const dropdownRef = useRef(null);
     const months = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -94,25 +97,37 @@ function PorPagar() {
         setResultados(sortedResults);
     };
 
-    const buscarpendiente = async () => {
-        if (!COA || COA.trim() === '' || COA === '.') {
-            setError('Por favor ingrese un COA válido');
-            alert("Por favor ingrese un COA válido");
+    const buscarpendiente = async (coasToSearch = [COA]) => {
+        if (!coasToSearch || coasToSearch.length === 0 || coasToSearch.every(coa => !coa || coa.trim() === '' || coa === '.')) {
+            setError('Por favor ingrese al menos un COA válido');
+            alert("Por favor ingrese al menos un COA válido");
             return;
         }
 
         setLoading(true);
         setError('');
         try {
-            const params = { COA };
-            if (selectedYear) params.year = selectedYear;
-            if (selectedMonths.length > 0) {
-                params.month = selectedMonths.map(month => monthMap[month]).join(',');
+            let allResults = [];
+            for (const coa of coasToSearch) {
+                const params = { COA: coa.trim() };
+                if (selectedYear) params.year = selectedYear;
+                if (selectedMonths.length > 0) {
+                    params.month = selectedMonths.map(month => monthMap[month]); // Enviar como array
+                }
+
+                const data = await window.API.ctapagar(params);
+                if (data.resultados && data.resultados.length > 0) {
+                    allResults = [...allResults, ...data.resultados];
+                }
             }
 
-            const data = await window.API.ctapagar(params);
-            setResultados(data.resultados);
-            setCantidadResultados(<strong>Se encontró {data.resultados.length} resultado(s)</strong>);
+            if (allResults.length > 0) {
+                setResultados(allResults);
+                setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
+            } else {
+                setCantidadResultados('No se encontraron resultados para los COAs especificados');
+                setResultados([]);
+            }
             setError('');
         } catch (error) {
             console.error('Error:', error);
@@ -126,8 +141,8 @@ function PorPagar() {
 
     const buscarMultiple = async (coasToSearch) => {
         if (!coasToSearch || coasToSearch.length === 0) {
-            setError('Por favor seleccione al menos un COA');
-            alert("Por favor seleccione al menos un COA");
+            setError('Por favor seleccione o ingrese al menos un COA');
+            alert("Por favor seleccione o ingrese al menos un COA");
             return;
         }
 
@@ -136,10 +151,10 @@ function PorPagar() {
         try {
             let allResults = [];
             for (const coa of coasToSearch) {
-                const params = { COA: coa };
+                const params = { COA: coa.trim() };
                 if (selectedYear) params.year = selectedYear;
                 if (selectedMonths.length > 0) {
-                    params.month = selectedMonths.map(month => monthMap[month]).join(',');
+                    params.month = selectedMonths.map(month => monthMap[month]); // Enviar como array
                 }
                 const data = await window.API.ctapagar(params);
                 if (data.resultados && data.resultados.length > 0) {
@@ -147,8 +162,13 @@ function PorPagar() {
                 }
             }
 
-            setResultados(allResults);
-            setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
+            if (allResults.length > 0) {
+                setResultados(allResults);
+                setCantidadResultados(<strong>Se encontró {allResults.length} resultado(s)</strong>);
+            } else {
+                setCantidadResultados('No se encontraron resultados para los COAs especificados');
+                setResultados([]);
+            }
             setError('');
         } catch (error) {
             console.error('Error:', error);
@@ -171,8 +191,13 @@ function PorPagar() {
         setError('');
         try {
             const data = await window.API.pendiente({ COA });
-            setPendiente(data[0]);
-            setError('');
+            if (data.length > 0) {
+                setPendiente(data[0]);
+                setError('');
+            } else {
+                setPendiente(null);
+                setError('No se encontraron resultados para el COA especificado');
+            }
         } catch (error) {
             console.error('Error al calcular la deuda:', error);
             setPendiente(null);
@@ -194,6 +219,9 @@ function PorPagar() {
         setSelectedMonths([]);
         setSelectedYear(null);
         setIsOpen(false);
+        setSelectAllMonths(false);
+        setMultipleCOAs('');
+        setUseManualInput(false);
     };
 
     const exportToExcel = () => {
@@ -245,6 +273,15 @@ function PorPagar() {
         );
     };
 
+    const handleSelectAllMonths = () => {
+        if (selectAllMonths) {
+            setSelectedMonths([]);
+        } else {
+            setSelectedMonths([...months]);
+        }
+        setSelectAllMonths(!selectAllMonths);
+    };
+
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
     };
@@ -258,13 +295,21 @@ function PorPagar() {
     };
 
     const handleMultipleSearch = () => {
-        if (selectedCOAs.length === 0) {
-            alert('Por favor seleccione al menos un COA');
+        let coasToSearch = [];
+        if (useManualInput) {
+            coasToSearch = multipleCOAs.split(',').map(coa => coa.trim()).filter(coa => coa.length > 0);
+        } else {
+            coasToSearch = selectedCOAs;
+        }
+
+        if (coasToSearch.length === 0) {
+            alert('Por favor seleccione o ingrese al menos un COA');
             return;
         }
         setShowModal(false);
         setSearchTerm('');
-        buscarMultiple(selectedCOAs);
+        setMultipleCOAs('');
+        buscarMultiple(coasToSearch);
     };
 
     const filteredCOAs = allCOAs.filter(coa =>
@@ -311,10 +356,20 @@ function PorPagar() {
                             className="btn btn-secondary dropdown-toggle"
                             type="button"
                             onClick={toggleDropdown}
+                            style={{ fontFamily: 'Rubik' }}
                         >
                             Seleccione el mes
                         </button>
-                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`}>
+                        <div className={`dropdown-menu ${isOpen ? "show" : ""}`} style={{ fontFamily: 'Rubik' }}>
+                            <div style={{ marginLeft: '6px' }}>
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    checked={selectAllMonths}
+                                    onChange={handleSelectAllMonths}
+                                />
+                                <label style={{ marginLeft: '5px' }}>Seleccionar todos</label>
+                            </div>
                             {months.map((month, index) => (
                                 <div key={index} className="dropdown-item" style={{ padding: 0 }}>
                                     <label
@@ -341,7 +396,7 @@ function PorPagar() {
 
             <div className="row g-3 mb-5">
                 <div className="col-12 col-md-3">
-                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={buscarpendiente}>
+                    <button className="btn btn-secondary btn-lg w-100" style={{ fontFamily: 'Rubik' }} onClick={() => buscarpendiente()}>
                         Buscar
                     </button>
                 </div>
@@ -364,7 +419,7 @@ function PorPagar() {
 
             <hr className="my-4" />
 
-            <div className='div-resultados'>
+            <div className="div-resultados">
                 <h2>Resultados:</h2>
                 <button className="btn btn-success btn-lg w-25" style={{ fontFamily: 'Rubik' }} onClick={exportToExcel}>
                     <i className="fa-solid fa-file-arrow-down"></i> Exportar a Excel
@@ -465,36 +520,64 @@ function PorPagar() {
                                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                             </div>
                             <div className="modal-body">
-                                <p>Seleccione los COAs para buscar:</p>
-                                <div className="mb-3">
+                                <div className="form-check mb-3">
                                     <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder="Buscar COA..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id="useManualInput"
+                                        checked={useManualInput}
+                                        onChange={() => setUseManualInput(!useManualInput)}
                                     />
+                                    <label className="form-check-label" htmlFor="useManualInput">
+                                        Ingresar COAs manualmente
+                                    </label>
                                 </div>
-                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                    {filteredCOAs.length > 0 ? (
-                                        filteredCOAs.map((coa, index) => (
-                                            <div key={index} className="form-check">
-                                                <input
-                                                    type="checkbox"
-                                                    className="form-check-input"
-                                                    id={`coa-${index}`}
-                                                    checked={selectedCOAs.includes(coa)}
-                                                    onChange={() => handleCOAToggle(coa)}
-                                                />
-                                                <label className="form-check-label" htmlFor={`coa-${index}`}>
-                                                    {coa}
-                                                </label>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>No se encontraron COAs que coincidan con la búsqueda.</p>
-                                    )}
-                                </div>
+
+                                {useManualInput ? (
+                                    <>
+                                        <p>Ingrese los COAs separados por comas (e.g., COA1, COA2, COA3):</p>
+                                        <textarea
+                                            className="form-control"
+                                            rows="5"
+                                            value={multipleCOAs}
+                                            onChange={(e) => setMultipleCOAs(e.target.value)}
+                                            placeholder="COA1, COA2, COA3"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <p>Seleccione los COAs para buscar:</p>
+                                        <div className="mb-3">
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Buscar COA..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+                                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                            {filteredCOAs.length > 0 ? (
+                                                filteredCOAs.map((coa, index) => (
+                                                    <div key={index} className="form-check">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="form-check-input"
+                                                            id={`coa-${index}`}
+                                                            checked={selectedCOAs.includes(coa)}
+                                                            onChange={() => handleCOAToggle(coa)}
+                                                        />
+                                                        <label className="form-check-label" htmlFor={`coa-${index}`}>
+                                                            {coa}
+                                                        </label>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p>No se encontraron COAs que coincidan con la búsqueda.</p>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>

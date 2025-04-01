@@ -121,24 +121,46 @@ app.get('/api/ctacte', async (req, res) => {
         }
 
         if (year) {
-            let startDates = [];
-            let endDates = [];
+            let months = month;
 
-            if (month) {
-                const months = month.split(',').map(m => parseInt(m, 10));
-                months.forEach(m => {
-                    const daysInMonth = new Date(year, m, 0).getDate();
-                    const startDate = parseInt(`${year}${m.toString().padStart(2, '0')}01`, 10);
-                    const endDate = parseInt(`${year}${m.toString().padStart(2, '0')}${daysInMonth}`, 10);
-                    startDates.push(startDate);
-                    endDates.push(endDate);
+            // Asegurarnos que months sea un array
+            if (!months) {
+                months = [];
+            } else if (typeof months === 'string') {
+                // Si month es una cadena separada por comas (como en tu código actual), la convertimos a un array
+                months = months.split(',').filter(m => m.trim() !== '');
+            } else if (!Array.isArray(months)) {
+                // Si no es un array ni una cadena, lo tratamos como un solo valor
+                months = [months];
+            }
+
+            let monthConditions = [];
+
+            // Filtrar meses válidos
+            const validMonths = months
+                .filter(m => m && m.length >= 1) // Asegurarnos de que el mes no esté vacío
+                .map(m => m.toString().padStart(2, '0')) // Asegurar que tenga 2 dígitos
+                .filter(m => {
+                    const monthNum = parseInt(m, 10);
+                    return monthNum >= 1 && monthNum <= 12; // Validar que sea un mes válido
                 });
 
-                query.DOC_FCH = {
-                    $gte: Math.min(...startDates),
-                    $lte: Math.max(...endDates)
-                };
-            } else {
+            // Crear condiciones para cada mes
+            for (const m of validMonths) {
+                const monthNum = parseInt(m, 10);
+                const daysInMonth = new Date(year, monthNum, 0).getDate();
+                const startDate = parseInt(`${year}${m}01`, 10);
+                const endDate = parseInt(`${year}${m}${daysInMonth}`, 10);
+
+                monthConditions.push({
+                    DOC_FCH: { $gte: startDate, $lte: endDate }
+                });
+            }
+
+            if (monthConditions.length > 0) {
+                query.$or = monthConditions;
+            } else if (year) {
+                // Si hay año pero no meses válidos, buscar todo el año
                 const startDate = parseInt(`${year}0101`, 10);
                 const endDate = parseInt(`${year}1231`, 10);
                 query.DOC_FCH = { $gte: startDate, $lte: endDate };
@@ -212,24 +234,46 @@ app.get('/api/ctapagar', async (req, res) => {
         }
 
         if (year) {
-            let startDates = [];
-            let endDates = [];
+            let months = month;
 
-            if (month) {
-                const months = month.split(',').map(m => parseInt(m, 10));
-                months.forEach(m => {
-                    const daysInMonth = new Date(year, m, 0).getDate();
-                    const startDate = parseInt(`${year}${m.toString().padStart(2, '0')}01`, 10);
-                    const endDate = parseInt(`${year}${m.toString().padStart(2, '0')}${daysInMonth}`, 10);
-                    startDates.push(startDate);
-                    endDates.push(endDate);
+            // Asegurarnos que months sea un array
+            if (!months) {
+                months = [];
+            } else if (typeof months === 'string') {
+                // Si month es una cadena separada por comas (como en tu código actual), la convertimos a un array
+                months = months.split(',').filter(m => m.trim() !== '');
+            } else if (!Array.isArray(months)) {
+                // Si no es un array ni una cadena, lo tratamos como un solo valor
+                months = [months];
+            }
+
+            let monthConditions = [];
+
+            // Filtrar meses válidos
+            const validMonths = months
+                .filter(m => m && m.length >= 1) // Asegurarnos de que el mes no esté vacío
+                .map(m => m.toString().padStart(2, '0')) // Asegurar que tenga 2 dígitos
+                .filter(m => {
+                    const monthNum = parseInt(m, 10);
+                    return monthNum >= 1 && monthNum <= 12; // Validar que sea un mes válido
                 });
 
-                query.DOC_FCH = {
-                    $gte: Math.min(...startDates),
-                    $lte: Math.max(...endDates)
-                };
-            } else {
+            // Crear condiciones para cada mes
+            for (const m of validMonths) {
+                const monthNum = parseInt(m, 10);
+                const daysInMonth = new Date(year, monthNum, 0).getDate();
+                const startDate = parseInt(`${year}${m}01`, 10);
+                const endDate = parseInt(`${year}${m}${daysInMonth}`, 10);
+
+                monthConditions.push({
+                    DOC_FCH: { $gte: startDate, $lte: endDate }
+                });
+            }
+
+            if (monthConditions.length > 0) {
+                query.$or = monthConditions;
+            } else if (year) {
+                // Si hay año pero no meses válidos, buscar todo el año
                 const startDate = parseInt(`${year}0101`, 10);
                 const endDate = parseInt(`${year}1231`, 10);
                 query.DOC_FCH = { $gte: startDate, $lte: endDate };

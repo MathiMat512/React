@@ -29,11 +29,14 @@ function Principal() {
 
     <div className="content-area">
         <div className="section">
-            <h3 style={{ fontFamily: 'Poppins' }}>Espacios y Departamentos</h3>
+            <h3 style={{ fontFamily: 'Poppins' }}>Redes sociales y Externos</h3>
             <ul>
-                <li style={{ fontFamily: 'Poppins' }}>Colaboración de Ventas</li>
-                <li style={{ fontFamily: 'Poppins' }}>Anuncios de la Compañía</li>
-                <li style={{ fontFamily: 'Poppins' }}>Recursos Humanos</li>
+                <li style={{ fontFamily: 'Poppins' }}><i className="fa-solid fa-globe"></i><a style={{textDecoration:'none'}} href='https://www.lancaster.pe/#/home' target='blank'> Sitio web Ecommerce</a></li>
+                <li style={{ fontFamily: 'Poppins' }}><i class="fa-solid fa-thumbs-up"></i><a style={{textDecoration:'none'}} href='https://www.facebook.com/Lancaster.peru' target='blank'> Facebook</a></li>
+                <li style={{ fontFamily: 'Poppins' }}><i class="fa-solid fa-camera"></i><a style={{textDecoration:'none'}} href='https://www.instagram.com/lancaster_peru/#' target='blank'> Instagram</a></li>
+                <li style={{ fontFamily: 'Poppins' }}><i class="fa-solid fa-location-dot"></i> Prolongación Huamanga 890 - La Victoria</li>
+                <li style={{ fontFamily: 'Poppins' }}><i class="fa-solid fa-phone"></i> Teléfono: (01) 474-5711 / (01) 474-5744</li>
+                <li style={{ fontFamily: 'Poppins' }}><i class="fa-solid fa-envelope"></i> Email: info@lancaster.com.pe</li>
             </ul>
         </div>
 
@@ -46,25 +49,10 @@ function Principal() {
                 <li style={{ fontFamily: 'Poppins' }}>Políticas y Procedimientos</li>
             </ul>
         </div>
-
-        <div className="section">
-            <h3 style={{ fontFamily: 'Poppins' }}>Aplicaciones</h3>
-            <div className="app-grid">
-                <div className="app-item">
-                    <img src="/api/placeholder/48/48" alt="Office 365" />
-                    <p style={{ fontFamily: 'Poppins' }}>Office 365</p>
-                </div>
-                <div className="app-item">
-                    <img src="/api/placeholder/48/48" alt="Quickbooks" />
-                    <p style={{ fontFamily: 'Poppins' }}>Quickbooks</p>
-                </div>
-                <div className="app-item">
-                    <img src="/api/placeholder/48/48" alt="Salesforce" />
-                    <p style={{ fontFamily: 'Poppins' }}>Salesforce</p>
-                </div>
-            </div>
-        </div>
     </div>
+        <div style={{ textAlign: 'center', padding: '10px' }}>
+            <h5 style={{ fontFamily: 'Poppins' }}>2025 Todos los derechos reservados</h5>
+        </div>
 </div>
     );
 }

@@ -125,7 +125,7 @@ hr {
 .table thead {
     position: sticky;
     top: -18px; /* Mover el encabezado ligeramente hacia arriba */
-    z-index: 1000; /* Asegura que el encabezado esté sobre el contenido */
+    z-index: 100; /* Asegura que el encabezado esté sobre el contenido */
     background-color: white; /* Fondo sólido */
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* Añadir sombra para mejorar la visibilidad */
     backface-visibility: hidden; /* Evitar problemas de renderizado */
@@ -137,7 +137,7 @@ hr {
     background-color: white; /* Fondo sólido */
     border-bottom: 2px solid #dee2e6;
     padding: 12px 8px; /* Añadir más padding para dar espacio */
-    z-index: 1000; /* Asegura que el encabezado esté sobre el contenido */
+    z-index: 100; /* Asegura que el encabezado esté sobre el contenido */
     backface-visibility: hidden; /* Evitar problemas de renderizado */
     
 }
